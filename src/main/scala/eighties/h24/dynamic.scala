@@ -1,0 +1,274 @@
+package eighties.h24
+
+import java.io.{FileInputStream, FileOutputStream}
+
+import better.files._
+import File._
+import com.vividsolutions.jts.geom.Envelope
+import com.vividsolutions.jts.index.strtree.STRtree
+import eighties.h24.tools.random.multinomial
+import eighties.h24.social._
+import space.{Attraction, Index, Location, World}
+import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice}
+import monocle.function.all.{each, filterIndex, index, second}
+import monocle.macros.Lenses
+import monocle.{Lens, Traversal}
+import tools.lens._
+import tools.random._
+import scala.reflect.ClassTag
+import scala.util.Random
+
+object dynamic {
+
+  import MoveMatrix._
+
+  def reachable[T](index: Index[T]) =
+    for {
+      i <- 0 until index.sideI
+      j <- 0 until index.sideJ
+      if !index.cells(i)(j).isEmpty
+    } yield (i, j)
+
+  def randomMove[I: ClassTag](world: World[I], timeSlice: TimeSlice, ratio: Double, location: Lens[I, Location], stableDestinations: I => Map[TimeSlice, Location], random: Random) = {
+    val reach = reachable(Index.indexIndividuals(world, location.get))
+    val rSize = reach.size
+    def randomLocation = location.modify(l => if(random.nextDouble() < ratio) reach(random.nextInt(rSize)) else l)
+    def move(individual: I) = stableLocationOrMove(individual, timeSlice, stableDestinations, location, randomLocation)
+    (World.allIndividuals[I] modify move) (world)
+  }
+
+  def goBackHome[W, I](world: W, allIndividuals: Traversal[W, I], location: Lens[I, Location], home: I => Location) = {
+    def m = (individual: I) => location.set(home(individual))(individual)
+    (allIndividuals modify m)(world)
+  }
+
+  object MoveMatrix {
+
+    object TimeSlice {
+      def fromHours(from: Int, to: Int): TimeSlice = new TimeSlice(from * 60, to * 60)
+    }
+
+    case class TimeSlice(from: Int, to: Int) {
+      def length = to - from
+    }
+
+    object Move {
+      def location = Move.locationIndex composeIso Location.indexIso
+      def apply(location: Location, ratio: Float) = new Move(Location.toIndex(location), ratio)
+    }
+
+    type TimeSlices = Vector[(TimeSlice, CellMatrix)]
+    type CellMatrix = Array[Array[Cell]]
+    type Cell = Map[AggregatedSocialCategory, Array[Move]]
+    type LocatedCell = (TimeSlice, Int, Int) => Cell
+    @Lenses case class Move(locationIndex: Short, ratio: Float)
+
+    def cellName(t: TimeSlice, i: Int, j: Int) = s"${t.from}-${t.to}_${i}_$j"
+
+    def getLocatedCells(timeSlice: TimeSlices) =
+      for {
+        (ts, matrix) <- timeSlice
+        (line, i) <- matrix.zipWithIndex
+        (c, j) <- line.zipWithIndex
+      } yield (ts, (i, j), c)
+
+    def getLocatedCellsFromCellMatrix(matrix: CellMatrix) =
+      for {
+        (line, i) <- matrix.zipWithIndex
+        (c, j) <- line.zipWithIndex
+      } yield ((i, j), c)
+
+    def modifyCellMatrix(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix =
+      matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
+
+    def cell(location: Location) =
+      index[Vector[Vector[Cell]], Int, Vector[Cell]](location._1) composeOptional index(location._2)
+
+    def cells =
+      each[TimeSlices, (TimeSlice, CellMatrix)] composeLens
+        second[(TimeSlice, CellMatrix), CellMatrix] composeIso arrayVectorIso composeTraversal each composeIso arrayVectorIso composeTraversal
+        each[Vector[Cell], Cell]
+
+    def allMoves =
+      cells composeTraversal
+        each[Cell, Array[Move]] composeIso arrayVectorIso composeTraversal each[Vector[Move], Move]
+
+    def moves(category: AggregatedSocialCategory => Boolean) =
+      cells composeTraversal
+        filterIndex[Cell, AggregatedSocialCategory, Array[Move]](category) composeIso arrayVectorIso composeTraversal
+        each[Vector[Move], Move]
+
+//    def movesInNeighborhood(cellMatrix: CellMatrix, category: AggregatedSocialCategory, neighbor: Location => Boolean) =
+//      for {
+//        (line, i) <- cellMatrix.zipWithIndex
+//        (cell, j) <- line.zipWithIndex
+//        loc = Location(i,j)
+//        if (neighbor(loc))
+//        moves <- cell.get(category).toSeq
+//      } yield (loc -> moves)
+
+    def movesInNeighborhood(location: Location, category: AggregatedSocialCategory, index: STRtree) =
+      for {
+        (l,c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell])
+        moves <- c.get(category)
+      } yield l -> moves
+
+    def movesInNeighborhoodByCategory(location: Location, index: STRtree) =
+      for {
+        (l,c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell])
+      } yield l -> c
+    //category: AggregatedSocialCategory
+
+    def location = MoveMatrix.Move.location
+    def moveRatio = MoveMatrix.Move.ratio
+
+    def noMove(i: Int, j: Int) =
+      Vector.tabulate(i, j) {(ii, jj) => AggregatedSocialCategory.all.map { c => c -> Vector((ii, jj) -> 1.0) }.toMap }
+
+    import boopickle.Default._
+
+    implicit val categoryPickler = transformPickler((i: Int) => SocialCategory.all(i))(s => SocialCategory.all.indexOf(s))
+    implicit val aggregatedCategoryPickler = transformPickler((i: Int) => AggregatedSocialCategory.all(i))(s => AggregatedSocialCategory.all.indexOf(s))
+
+    def save(moves: TimeSlices, file: File) = {
+      val os = new FileOutputStream(file.toJava)
+      try os.getChannel.write(Pickle.intoBytes(moves))
+      finally os.close()
+    }
+
+    def saveCell(moves: TimeSlices, file: File) = {
+      file.createDirectories()
+      getLocatedCells(moves).foreach{
+        case (t, (i,j), cell) =>
+          val os = new FileOutputStream((file / cellName(t, i, j)).toJava)
+          try os.getChannel.write(Pickle.intoBytes(cell))
+          finally os.close()
+      }
+
+//      val os = new FileOutputStream((file / timeSlicesFileName).toJava)
+//      try os.getChannel.write(Pickle.intoBytes(moves.map(_._1)))
+//      finally os.close()
+    }
+
+    def load(file: File) = {
+      val is = new FileInputStream(file.toJava)
+      try Unpickle[TimeSlices].fromBytes(is.getChannel.toMappedByteBuffer)
+      finally is.close()
+    }
+
+//    def loadTimeSlices(file: File) = {
+//      val is = new FileInputStream((file / timeSlicesFileName).toJava)
+//      try Unpickle[Cell].fromBytes(is.getChannel.toMappedByteBuffer)
+//      finally is.close()
+//    }
+
+    def loadCell(file: File, t: TimeSlice, i: Int, j: Int) = {
+      val is = new FileInputStream((file / cellName(t, i, j)).toJava)
+      try Unpickle[Cell].fromBytes(is.getChannel.toMappedByteBuffer)
+      finally is.close()
+    }
+
+  }
+
+  def moveFlowDefaultOnOtherSex[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory) /*moves: MoveMatrix.CellMatrix, individualInCel: Individual)*/ = {
+    //val location = Individual.location.get(individual)
+    //val cellMoves = moves(location._1)(location._2)
+    val aggregatedCategory = socialCategory(individual)
+    def myCategory = cellMoves.get(aggregatedCategory)
+    def noSex = cellMoves.find { case(c, _) => c.age == aggregatedCategory.age && c.education == aggregatedCategory.education }.map(_._2)
+    myCategory orElse noSex
+  }
+
+  def sampleDestinationInMoveMatrix[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory, random: Random) =
+    moveFlowDefaultOnOtherSex(cellMoves, individual, socialCategory).flatMap { m =>
+      if(m.isEmpty) None else Some(multinomial(m.map{ m => MoveMatrix.Move.location.get(m) -> MoveMatrix.Move.ratio.get(m).toDouble })(random))
+    }
+
+  def stableLocationOrMove[I](individual: I, timeSlice: TimeSlice, stableDestinations: I => Map[TimeSlice, Location], location: Lens[I, Location], move: I => I) =
+    stableDestinations(individual).get(timeSlice) match {
+      case None => move(individual)
+      case Some(stableDestination) => location.set(stableDestination)(individual)
+    }
+
+  def moveInMoveMatrix[I: ClassTag](world: World[I], locatedCell: LocatedCell, timeSlice: TimeSlice, stableDestination: I => Map[TimeSlice, Location], location: Lens[I, Location], home: I => Location, socialCategory: I => AggregatedSocialCategory, random: Random): World[I] = {
+    def sampleMoveInMatrix[I](cellMoves: Cell, location: Lens[I, Location], socialCategory: I => AggregatedSocialCategory)(individual: I) =
+      sampleDestinationInMoveMatrix(cellMoves, individual, socialCategory, random) match {
+        case Some(destination) => location.set(destination)(individual)
+        case None => individual
+      }
+
+    val newIndividuals = Array.ofDim[I](world.individuals.length)
+    var index = 0
+
+    for {
+      (line, i) <- Index.cells.get(Index.indexIndividuals(world, home)).zipWithIndex
+      (individuals, j) <- line.zipWithIndex
+    } {
+      val cell = locatedCell(timeSlice, i, j)
+      for {
+        individual <- individuals
+      } {
+        newIndividuals(index) = stableLocationOrMove(individual, timeSlice, stableDestination, location, sampleMoveInMatrix(cell, location, socialCategory))
+        index += 1
+      }
+    }
+
+    World.individuals[I].set(newIndividuals)(world)
+  }
+
+  def assignRandomDayLocation[I: ClassTag](world: World[I], locatedCell: LocatedCell, stableDestination: Lens[I, Map[TimeSlice, Location]], location: I => Location, home: I => Location, socialCategory: I => AggregatedSocialCategory, rng: Random) = {
+    val newIndividuals = Array.ofDim[I](world.individuals.length)
+    var index = 0
+
+    for {
+      (line, i) <- Index.cells.get(Index.indexIndividuals(world, location)).zipWithIndex
+      (individuals, j) <- line.zipWithIndex
+    } {
+      val workTimeMovesFromCell = locatedCell(dayTimeSlice, i, j)
+
+      for {
+        individual <- individuals
+      } {
+         def newIndividual =
+           dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match {
+            case Some(d) => stableDestination.modify(_ + (dayTimeSlice -> d))(individual)
+            case None => stableDestination.modify(_ + (dayTimeSlice -> home(individual)))(individual)
+          }
+        newIndividuals(index) = newIndividual
+        index += 1
+      }
+    }
+
+    World.individuals.set(newIndividuals)(world)
+  }
+
+  def assignFixNightLocation[I: ClassTag](world: World[I], stableDestination: Lens[I, Map[TimeSlice, Location]], home: I => Location) =
+    World.allIndividuals[I].modify { individual => stableDestination.modify(_ + (nightTimeSlice -> home(individual)))(individual) } (world)
+
+  def randomiseLocation[I: ClassTag](world: World[I], location: I => Location, home: Lens[I, Location], random: Random) = {
+    val reach = reachable(Index[I](world.individuals.iterator, location, world.sideI, world.sideJ))
+    val reachSize = reach.size
+
+    def assign(individual: I): I =
+      home.set(reach(random.nextInt(reachSize))) (individual)
+
+    (World.allIndividuals[I] modify assign)(world)
+  }
+
+  def generateAttractions[I: ClassTag](world: World[I], proportion: Double, location: I => Location, random: Random) = {
+    val reach = reachable(Index.indexIndividuals(world, location))
+
+    def attraction = {
+      val location = reach.randomElement(random)
+      val education = AggregatedEducation.all.randomElement(random)
+      Attraction(location, education)
+    }
+
+    def attractions = (0 until (reach.size * proportion).toInt).map(_ => attraction)
+    World.attractions.set(attractions.toArray)(world)
+  }
+
+  def logistic(l: Double, k: Double, x0: Double)(x: Double) = l / (1.0 +  math.exp(-k * (x - x0)))
+
+
+}
