@@ -19,7 +19,7 @@ object PopulationGenerator extends App {
   val popData = CSVData(baseICEvolStructPopFileName,6,Seq(Slice(34, 40), Slice(44, 50)), 0, CommaFormat, Some(Seq(cleanIris)))
   val eduData = CSVData(baseICDiplomesFormationPopFileName,6,Seq(Slice(13,20), Slice(20,27)),0,CommaFormat, Some(Seq(cleanIris)))
   val sexData = CSVData(baseICDiplomesFormationPopFileName,6,Seq(Slice(36,43), Slice(44,51)),0,CommaFormat, Some(Seq(cleanIris)))
-  val shpData = ShapeData(contourIRISFile, "DCOMIRIS", Some(Seq(cleanIris)) )
+  val shpData = ShapeData(contourIRISFile, "DCOMIRIS", Some(Seq(cleanIris)) )//changes name after the 2014 update
   val cellsData = CellsData(cellFile,"x_laea","y_laea","ind")
 
   println(Calendar.getInstance.getTime + " Generating population")
