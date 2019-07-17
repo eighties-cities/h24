@@ -1,22 +1,54 @@
 package eighties.h24.tools
 
-import better.files.File
+import java.io.File
 import eighties.h24.generation.{WorldFeature, flowsFromEGT}
 import eighties.h24.social.AggregatedSocialCategory
+import scopt._
 
 object MoveMatrixGenerator extends App {
 
-  import eighties.h24.dynamic._
+  case class Config(
+    egt: Option[File] = None,
+    population: Option[File] = None,
+    moves: Option[File] = None)
 
-  def ls(c: AggregatedSocialCategory) = MoveMatrix.moves { category => category == c } composeLens MoveMatrix.location
+  val builder = OParser.builder[Config]
+  val parser = {
+    import builder._
+    OParser.sequence(
+      programName("move matrix generator"),
+      // option -f, --foo
+      opt[File]('e', "egt")
+        .required()
+        .action((x, c) => c.copy(egt = Some(x)))
+        .text("EGT file compressed with lzma"),
+      opt[File]('p', "population")
+        .required()
+        .action((x, c) => c.copy(population = Some(x)))
+        .text("population file generated with h24"),
+      opt[File]('m', "moves")
+        .required()
+        .action((x, c) => c.copy(moves = Some(x)))
+        .text("result path where the moves are generated")
+    )
+  }
 
-  val path = File("../data/EGT 2010/presence semaine EGT")
-  val outputPath = File("results")
-  outputPath.createDirectories()
+  OParser.parse(parser, args, Config()) match {
+    case Some(config) =>
+      import eighties.h24.dynamic._
+      import better.files._
 
-  val bb = WorldFeature.load(File("data/population.bin")).originalBoundingBox
-  println(bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
+      def ls(c: AggregatedSocialCategory) = MoveMatrix.moves { category => category == c } composeLens MoveMatrix.location
 
-  val newMatrix = flowsFromEGT(bb, path / "presence_semaine_GLeRoux.csv.lzma").get
-  MoveMatrix.saveCell(newMatrix, outputPath / "moves")
+      config.moves.get.mkdirs()
+
+      val bb = WorldFeature.load(config.population.get.toScala).originalBoundingBox
+      println(bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
+
+      val newMatrix = flowsFromEGT(bb, config.egt.get.toScala).get
+      MoveMatrix.saveCell(newMatrix, config.moves.get.toScala)
+
+    case _ =>
+  }
+
 }
