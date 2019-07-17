@@ -1,7 +1,7 @@
 package eighties.h24.tools
 
 import better.files._
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataUtilities, Transaction}
 import eighties.h24.generation._
@@ -43,8 +43,8 @@ object QGISPopulationGenerator extends App {
     )
     val simpleFeature = writer.next
     simpleFeature.setAttributes(values)
-    writer.write
+    writer.write()
   }
-  writer.close
-  dataStore.dispose
+  writer.close()
+  dataStore.dispose()
 }

@@ -50,8 +50,8 @@ object space {
   def cell(p: Coordinate) = ((p._1 / 1000.0).toInt, (p._2 / 1000.0).toInt)
 
   def distance(l1: Location, l2: Location) = {
-    val c1 = new com.vividsolutions.jts.geom.Coordinate(l1._1, l1._2)
-    val c2 = new com.vividsolutions.jts.geom.Coordinate(l2._1, l2._2)
+    val c1 = new org.locationtech.jts.geom.Coordinate(l1._1, l1._2)
+    val c2 = new org.locationtech.jts.geom.Coordinate(l2._1, l2._2)
     c1.distance(c2)
   }
 

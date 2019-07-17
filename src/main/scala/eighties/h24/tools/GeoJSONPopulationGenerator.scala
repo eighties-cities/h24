@@ -3,7 +3,7 @@ package eighties.h24.tools
 import java.util.Calendar
 
 import better.files.File
-import com.vividsolutions.jts.geom.{Coordinate, GeometryFactory}
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import eighties.h24.generation.WorldFeature
 import org.geotools.data.DataUtilities
 import org.geotools.feature.DefaultFeatureCollection
