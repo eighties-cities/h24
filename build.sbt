@@ -23,7 +23,6 @@ libraryDependencies ++= Seq (
   "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion,
   "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
   "com.github.julien-truffaut"  %%  "monocle-macro"   % monocleVersion,
-  "org.geotools" % "geotools" % geotoolsVersion,
   "org.geotools" % "gt-referencing" % geotoolsVersion,
   "org.geotools" % "gt-shapefile" % geotoolsVersion,
   "org.geotools" % "gt-epsg-wkt" % geotoolsVersion,
@@ -61,7 +60,6 @@ OsgiKeys.importPackage := Seq("*;resolution:=optional")
 
 OsgiKeys.privatePackage := Seq("!scala.*,!java.*,*")
 
-//OsgiKeys.requireCapability := """osgi.ee;filter:="(&(osgi.ee=JavaSE)(version=1.8))""""
 OsgiKeys.requireCapability := """osgi.ee; osgi.ee="JavaSE";version:List="1.8,1.9""""
 
 OsgiKeys.additionalHeaders :=  Map(
@@ -73,4 +71,4 @@ OsgiKeys.additionalHeaders :=  Map(
   "Implementation-Vendor" -> "Eighties"
 )
 
-OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> (f.getName startsWith "gt-"))
+OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> f.getName startsWith "gt-")
