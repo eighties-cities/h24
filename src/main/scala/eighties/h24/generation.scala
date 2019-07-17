@@ -5,10 +5,7 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import better.files._
-import com.github.tototoshi.csv.{CSVFormat, CSVParser, CSVReader, DefaultCSVFormat, defaultCSVFormat}
-import com.vividsolutions.jts.geom._
-import com.vividsolutions.jts.index.strtree.STRtree
-import com.vividsolutions.jts.triangulate.ConformingDelaunayTriangulationBuilder
+import com.github.tototoshi.csv.{CSVFormat, CSVReader, DefaultCSVFormat}
 import dynamic.MoveMatrix
 import dynamic.MoveMatrix.{Cell, TimeSlice}
 import eighties.h24.social._
@@ -21,6 +18,9 @@ import org.geotools.data.shapefile.ShapefileDataStore
 import org.geotools.geometry.jts.{JTS, JTSFactoryFinder}
 import org.geotools.referencing.CRS
 import org.joda.time.{DateTime, DateTimeFieldType, Interval}
+import org.locationtech.jts.geom.{Coordinate, Envelope, GeometryCollection, GeometryFactory, MultiPolygon, Point, Polygon}
+import org.locationtech.jts.index.strtree.STRtree
+import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 import org.opengis.referencing.operation.MathTransform
 import scalaz.Memo
@@ -155,7 +155,7 @@ object  generation {
 
   def readGeometry(shapeData:ShapeData, filter: String => Boolean): Try[(Seq[AreaID],AreaID => Option[MultiPolygon])] = {
     def aggregated(geometry: Map[AreaID, MultiPolygon]): AreaID => Option[MultiPolygon] = Memo.mutableHashMapMemo {
-      (id: AreaID) =>
+      id: AreaID =>
       geometry.get(id) match {
         case Some(mp) => Some(mp)
         case None =>

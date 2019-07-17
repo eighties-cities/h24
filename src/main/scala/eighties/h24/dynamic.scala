@@ -3,9 +3,8 @@ package eighties.h24
 import java.io.{FileInputStream, FileOutputStream}
 
 import better.files._
-import File._
-import com.vividsolutions.jts.geom.Envelope
-import com.vividsolutions.jts.index.strtree.STRtree
+import org.locationtech.jts.geom.Envelope
+import org.locationtech.jts.index.strtree.STRtree
 import eighties.h24.tools.random.multinomial
 import eighties.h24.social._
 import space.{Attraction, Index, Location, World}
