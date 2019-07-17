@@ -2,6 +2,10 @@
 
 Yet another synthetic population generator.
 
+## Install
+
+sbt publishLocal
+
 ## Generate a synthetic population for your study area
 
 ### Get Files for your study area
