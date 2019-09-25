@@ -4,7 +4,7 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.10"
 
 val monocleVersion = "1.5.0"
 
@@ -20,6 +20,7 @@ resolvers ++= Seq(
 
 
 libraryDependencies ++= Seq (
+  "org.mapdb" % "mapdb" % "3.0.7",
   "com.github.scopt" %% "scopt" % "4.0.0-RC2",
   "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion,
   "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,

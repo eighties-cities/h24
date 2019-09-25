@@ -1,9 +1,14 @@
 package eighties.h24.tools
 
-import java.io.File
+import java.io.{File, FileOutputStream}
+
+import boopickle.Default.Pickle
+import eighties.h24.dynamic.MoveMatrix.{TimeSlice, cellName}
 import eighties.h24.generation.{WorldFeature, flowsFromEGT}
 import eighties.h24.social.AggregatedSocialCategory
+import eighties.h24.space.Location
 import scopt._
+import org.mapdb._
 
 object MoveMatrixGenerator extends App {
 
@@ -38,15 +43,43 @@ object MoveMatrixGenerator extends App {
       import eighties.h24.dynamic._
       import better.files._
 
-      def ls(c: AggregatedSocialCategory) = MoveMatrix.moves { category => category == c } composeLens MoveMatrix.location
 
-      config.moves.get.mkdirs()
+      //def ls(c: AggregatedSocialCategory) = MoveMatrix.moves { category => category == c } composeLens MoveMatrix.location
+      //config.moves.get.mkdirs()
 
       val bb = WorldFeature.load(config.population.get.toScala).originalBoundingBox
       println(bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
 
+
       val newMatrix = flowsFromEGT(bb, config.egt.get.toScala).get
-      MoveMatrix.saveCell(newMatrix, config.moves.get.toScala)
+      config.moves.get.toScala.createDirectories()
+
+//      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
+//        import boopickle.Default._
+//        val (i, j) = location
+//        val os = new FileOutputStream((config.moves.get.toScala / MoveMatrix.cellName(timeSlice, i, j)).toJava)
+//        try os.getChannel.write(Pickle.intoBytes[MoveMatrix.Cell](cell))
+//        finally os.close()
+//      }
+
+      val db = DBMaker.fileDB(config.moves.get)
+        .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
+        .fileMmapPreclearDisable()   // Make mmap file faster
+        .cleanerHackEnable().make
+
+      val map = db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[Any, Any]]
+
+
+      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
+        println(s"put $timeSlice $location")
+        map.put((location, timeSlice), cell)
+      }
+
+      //import eighties.h24.dynamic._
+      //save(eighties.h24.generation.timeSlices.head, (0, 0),  Map(AggregatedSocialCategory.all.head -> Array(MoveMatrix.Move(7.toShort, 0.9.toFloat))))
+
+      MoveMatrix.saveCell(newMatrix, save)
+      db.close()
 
     case _ =>
   }

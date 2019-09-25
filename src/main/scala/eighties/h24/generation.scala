@@ -819,22 +819,24 @@ object  generation {
         }
         (t, cm, index)
     }
+
     def interpolate(index: Vector[(TimeSlice, CellMatrix, SpatialCellIndex)]): TimeSlices = index.map {
       case (time, cellMatrix, ind) =>
         //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
         //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
         (time, modifyCellMatrix(interpolateFlows(ind, idw(2.0)))(cellMatrix))
     }
+
     def getMovesFromOppositeSex(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
         val moves = c.get(cat)
-        def noSex = c.find { case (sc, _) => sc.age == cat.age && sc.education == cat.education }.map(_._2)
+        def noSex = c.find { case (sc, _) => AggregatedSocialCategory.age.get(sc) == AggregatedSocialCategory.age.get(cat) && sc.education == cat.education }.map(_._2)
         (moves orElse noSex) map (m => cat -> m)
       }.toMap
 
 
 
-    readFlowsFromEGT(aFile, location) map { l =>
+    readFlowsFromEGT(aFile, location).map { l =>
       val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
       for {
         slice <- nm
@@ -844,9 +846,9 @@ object  generation {
 
       //l.foldLeft(noMove(slices, boundingBox.sideI, boundingBox.sideJ))(addFlowToMatrix)
 
-    } map {
+    }.map {
       cells modify getMovesFromOppositeSex
-    } map index map interpolate map {
+    }.map(index _).map(interpolate _).map {
       cells modify normalizeFlows
     }
   }

@@ -135,14 +135,8 @@ object dynamic {
       finally os.close()
     }
 
-    def saveCell(moves: TimeSlices, file: File) = {
-      file.createDirectories()
-      getLocatedCells(moves).foreach{
-        case (t, (i,j), cell) =>
-          val os = new FileOutputStream((file / cellName(t, i, j)).toJava)
-          try os.getChannel.write(Pickle.intoBytes(cell))
-          finally os.close()
-      }
+    def saveCell(moves: TimeSlices, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit) = {
+      getLocatedCells(moves).foreach { case (t, l, cell) => save(t, l, cell) }
 
 //      val os = new FileOutputStream((file / timeSlicesFileName).toJava)
 //      try os.getChannel.write(Pickle.intoBytes(moves.map(_._1)))
@@ -174,7 +168,7 @@ object dynamic {
     //val cellMoves = moves(location._1)(location._2)
     val aggregatedCategory = socialCategory(individual)
     def myCategory = cellMoves.get(aggregatedCategory)
-    def noSex = cellMoves.find { case(c, _) => c.age == aggregatedCategory.age && c.education == aggregatedCategory.education }.map(_._2)
+    def noSex = cellMoves.find { case(c, _) => AggregatedSocialCategory.age.get(c) == AggregatedSocialCategory.age.get(aggregatedCategory) && c.education == aggregatedCategory.education }.map(_._2)
     myCategory orElse noSex
   }
 

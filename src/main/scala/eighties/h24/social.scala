@@ -54,23 +54,15 @@ object social {
   }
 
 
-  sealed trait AggregatedAge
+  type AggregatedAge = Byte
 
   object AggregatedAge {
 
     implicit def ordered = Ordering.by[AggregatedAge, String](toCode)
 
-    object Age1 extends AggregatedAge {
-      override def toString = "Age1"
-    }
-
-    object Age2 extends AggregatedAge{
-      override def toString = "Age2"
-    }
-
-    object Age3 extends AggregatedAge {
-      override def toString = "Age3"
-    }
+    val Age1: AggregatedAge = 0
+    val Age2: AggregatedAge = 1
+    val Age3: AggregatedAge = 2
 
     def apply(age: Age) = age match {
       case Age.From0To14 | Age.From15To29 => Age1
@@ -89,19 +81,15 @@ object social {
       }
   }
 
-  sealed trait Sex
+  type Sex = Byte
 
   object Sex {
 
     implicit def ordered = Ordering.by[Sex, String](toCode)
 
 
-    object Male extends Sex {
-      override def toString = "Male"
-    }
-    object Female extends Sex{
-      override def toString = "Female"
-    }
+    val Male: Sex = 0
+    val Female: Sex = 1
 
     def all = Array(Male, Female)
 
@@ -147,18 +135,12 @@ object social {
       }
   }
 
-  sealed trait AggregatedEducation
+  type AggregatedEducation = Byte
 
   object AggregatedEducation {
-    object Low extends AggregatedEducation {
-      override def toString = "Low"
-    }
-    object Middle extends AggregatedEducation {
-      override def toString = "Middle"
-    }
-    object High extends AggregatedEducation{
-      override def toString = "High"
-    }
+    val Low: AggregatedEducation = 0
+    val Middle: AggregatedEducation = 1
+    val High: AggregatedEducation = 2
 
     def all = Array(Low, Middle, High)
 
@@ -223,14 +205,18 @@ object social {
         AggregatedEducation.toCode(aggregatedSocialCategory.education))
 
 
+    def ageValue = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.age
+    def sexValue = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.sex
+    def educationValue = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.education
     def shortAggregatedSocialCategoryIso = monocle.Iso[Byte, AggregatedSocialCategory](i => all(i.toInt - Byte.MinValue))(c => (all.indexOf(c) + Byte.MinValue).toByte)
   }
 
 
   @Lenses case class AggregatedSocialCategory(
-                                               age: AggregatedAge,
-                                               sex: Sex,
-                                               education: AggregatedEducation)
+    age: AggregatedAge,
+    sex: Sex,
+    education: AggregatedEducation)
 
 
+  type ShortAggregatedSocialCategory = Short
 }
