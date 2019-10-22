@@ -96,6 +96,7 @@ object dynamic {
     def cell(location: Location) =
       index[Vector[Vector[Cell]], Int, Vector[Cell]](location._1) composeOptional index(location._2)
 
+
 //    def cells =
 //      each[MoveMatrix, (TimeSlice, CellMatrix)] composeLens
 //        second[(TimeSlice, CellMatrix), CellMatrix] composeIso arrayVectorIso composeTraversal each composeIso arrayVectorIso composeTraversal

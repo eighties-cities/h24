@@ -62,6 +62,8 @@ object MoveMatrixGenerator extends App {
 //        finally os.close()
 //      }
 
+      println(newMatrix.head._2.size)
+
       val db = DBMaker.fileDB(config.moves.get)
         .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
         .fileMmapPreclearDisable()   // Make mmap file faster
