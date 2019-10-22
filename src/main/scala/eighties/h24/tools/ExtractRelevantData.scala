@@ -80,7 +80,7 @@ object ExtractRelevantData extends App {
     } finally store.dispose()
   }
 
-  def getStringCellValue(cell: Cell) = if (cell.getCellType == CellType.NUMERIC) cell.getNumericCellValue.toString else cell.getStringCellValue
+  def getStringCellValue(cell: Cell) = {for (cel <- Option(cell)) yield {if (cel.getCellType == CellType.NUMERIC) cel.getNumericCellValue.toString else cel.getStringCellValue}} getOrElse ""
   def filterCSV(input: File, rowFilter: Row => Boolean, output: File) = {
     val bos = new BufferedOutputStream(new FileOutputStream(output))
     val lzmaos = new LZMACompressorOutputStream(bos)

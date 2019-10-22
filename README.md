@@ -4,7 +4,9 @@ Yet another synthetic population generator.
 
 ## Install
 
+```shell script
 sbt publishLocal
+```
 
 ## Generate a synthetic population for your study area
 
@@ -19,9 +21,26 @@ You should now have a "data" directory with all the relevant data in it.
 Note: We should have these files on IPFS very soon.
 
 ### Select the relevant data for your study area
-- geographically for **CONTOURS-IRIS** and **R_rfl09_LAEA1000** (could be done automatically)
+- geographically for **CONTOURS-IRIS** and **R_rfl09_LAEA1000**
 - by selection using *DEP*, *COM* or other relevant codes for **base-ic-evol-struct-pop** and **base-ic-diplomes-formation** (keep headers and everything, just filter the data)
 - export the latter files as *CSV* and create *csv.lzma* files
 
-This whole process should be automatically done in the future (given the geographical boundaries of the study area for instance).
+This whole process can be automatically done using the following command:
+```shell script
+sbt "runMain eighties.h24.tools.ExtractRelevantData -c data/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2014/CONTOURS-IRIS_2-0_SHP_LAMB93_FE-2014/CONTOURS-IRIS_FE.shp -g data/GRID/R_rfl09_LAEA1000.shp -p data/base-ic-evol-struct-pop-2012.xls -f data/base-ic-diplomes-formation-2012.xls -d dep_list -o prepared_data"
+```
+Where *dep_list* is a list of "départements" you wish to extract from your data and *prepared_data* is the output directory.
 
+For instance, the following command extracts the data for the 44 département (Loire Atlantique):
+```shell script
+sbt "runMain eighties.h24.tools.ExtractRelevantData -c data/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2014/CONTOURS-IRIS_2-0_SHP_LAMB93_FE-2014/CONTOURS-IRIS_FE.shp -g data/GRID/R_rfl09_LAEA1000.shp -p data/base-ic-evol-struct-pop-2012.xls -f data/base-ic-diplomes-formation-2012.xls -d 44 -o prepared_data_44"
+```
+
+The following command extracts the data for the entire Île-de-France région:
+```shell script
+sbt "runMain eighties.h24.tools.ExtractRelevantData -c data/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2014/CONTOURS-IRIS_2-0_SHP_LAMB93_FE-2014/CONTOURS-IRIS_FE.shp -g data/GRID/R_rfl09_LAEA1000.shp -p data/base-ic-evol-struct-pop-2012.xls -f data/base-ic-diplomes-formation-2012.xls -d 75,77,78,91,92,93,94,95 -o prepared_data_IDF"
+```
+
+You get the idea, right?
+
+### You are ready to generate you synthetic population!
