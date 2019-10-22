@@ -114,7 +114,7 @@ object dynamic {
 
     def movesInNeighborhoodByCategory(location: Location, index: STRtree) =
       for {
-        (l,c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell])
+        (l, c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell])
       } yield l -> c
     //category: AggregatedSocialCategory
 

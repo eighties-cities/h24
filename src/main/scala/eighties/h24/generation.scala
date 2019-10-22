@@ -755,17 +755,20 @@ object  generation {
     } else moves
   }
 
-  def interpolateFlows(index: SpatialCellIndex,
-                       interpolate: (Location, Array[Move], Vector[(Location, Array[Move])]) => Array[Move])
-                      (c: Cell, location: Location): Cell = {
+  def interpolateFlows(
+    index: SpatialCellIndex,
+    interpolate: (Location, Array[Move], Vector[(Location, Array[Move])]) => Array[Move])
+    (c: Cell, location: Location): Cell = {
     val movesByCat = movesInNeighborhoodByCategory(location, index)
     AggregatedSocialCategory.all.map {
       category =>
         def moves = c.getOrElse(category, Array())
-        def m = for {
-          (l, c) <- movesByCat
-          mm <- c.get(category)
-        } yield l -> mm
+        def m =
+          for {
+            (l, c) <- movesByCat
+            mm <- c.get(category)
+          } yield l -> mm
+
         category -> interpolate(location, moves, m.toVector)
     }.toMap
   }
@@ -814,7 +817,7 @@ object  generation {
     def interpolate(index: Vector[(TimeSlice, CellMatrix)]): TimeSlices = index.map {
       case (time, cellMatrix) =>
         val index = new STRtree()
-        getLocatedCellsFromCellMatrix(cellMatrix).foreach{lc=>
+        getLocatedCellsFromCellMatrix(cellMatrix).foreach{ lc =>
           val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
           index.insert(p.getEnvelopeInternal, lc)
         }
