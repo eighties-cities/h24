@@ -276,7 +276,8 @@ object  generation {
     println("pop from irises " + totalPopIris)
     */
     val inCRS = CRS.decode("EPSG:2154")
-    val outCRS = CRS.decode("EPSG:3035")
+//    val outCRS = CRS.decode("EPSG:3035")
+    val outCRS = CRS.decode("EPSG:27572")
     val transform = CRS.findMathTransform(inCRS, outCRS, true)
 
     irises.map { id =>
@@ -288,61 +289,65 @@ object  generation {
 
       val total = ageSexV.sum
 
-      val ageSexSizes = Seq(6,2)
-      val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
+      // make sure all relevant distributions exist
+      if (total > 0 && ageSexV.nonEmpty && schoolAgeV.nonEmpty && educationSexV(0).nonEmpty && educationSexV(1).nonEmpty) {
+        val ageSexSizes = Seq(6, 2)
+//        println(s"iris $id ($total) = $ageSexV == $educationSexV")
+        val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
 
-      val educationSexSizes = Seq(7)
-      val educationSexVariates = ArrayBuffer(
-        new RasterVariate(educationSexV(0).toArray, educationSexSizes),
-        new RasterVariate(educationSexV(1).toArray, educationSexSizes))
+        val educationSexSizes = Seq(7)
+        val educationSexVariates = ArrayBuffer(
+          new RasterVariate(educationSexV(0).toArray, educationSexSizes),
+          new RasterVariate(educationSexV(1).toArray, educationSexSizes))
 
-      val transformedIris = JTS.transform(geometry(id).get, transform)
+        val transformedIris = JTS.transform(geometry(id).get, transform)
 
-      val relevantCells = cells.query(transformedIris.getEnvelopeInternal).toArray.toSeq.map(_.asInstanceOf[KMCell]).filter(_._1.intersects(transformedIris))
-      val relevantCellsArea = relevantCells.map{
-        cell => {
-          val g = cell._1.intersection(transformedIris)
-          ((cell._3, cell._4), cell._2 * g.getArea / cell._1.getArea)
-        }
-      }.toArray.filter{case (_,v) => v>0}
+        val relevantCells = cells.query(transformedIris.getEnvelopeInternal).toArray.toSeq.map(_.asInstanceOf[KMCell]).filter(_._1.intersects(transformedIris))
+        val relevantCellsArea = relevantCells.map {
+          cell => {
+            val g = cell._1.intersection(transformedIris)
+            ((cell._3, cell._4), cell._2 * g.getArea / cell._1.getArea)
+          }
+        }.toArray.filter { case (_, v) => v > 0 }
 
-      if (relevantCellsArea.isEmpty) throw new RuntimeException("NoOOOOOOooooOOO cell intersecting the iris")
-      val res = (0 until total.toInt).map{ _ =>
-        val sample = ageSexVariate.compute(rnd)
-        val ageIndex = (sample(0)*ageSexSizes.head).toInt
-        val ageInterval = Age.all(ageIndex)
-        val residual = sample(0)*ageSexSizes.head - ageIndex
-        val age = ageInterval.to.map(max => rescale(ageInterval.from, max, residual))
-        val sex = (sample(1)*ageSexSizes(1)).toInt
+        if (relevantCellsArea.isEmpty) throw new RuntimeException(s"NoOOOOOOooooOOO cell intersecting iris $transformedIris")
+        val res = (0 until total.toInt).map { _ =>
+          val sample = ageSexVariate.compute(rnd)
+          val ageIndex = (sample(0) * ageSexSizes.head).toInt
+          val ageInterval = Age.all(ageIndex)
+          val residual = sample(0) * ageSexSizes.head - ageIndex
+          val age = ageInterval.to.map(max => rescale(ageInterval.from, max, residual))
+          val sex = (sample(1) * ageSexSizes(1)).toInt
 
-        var tempIndex = -1
-        var tempP = -1.0
-        val schooled = age match {
-          case Some(a) =>
-            val schoolAgeIndex = SchoolAge.index(a)
-            tempIndex = schoolAgeIndex
-            if (schoolAgeIndex == 0) false else {
-              tempP = schoolAgeV(schoolAgeIndex - 1)
-              rnd.nextDouble() < schoolAgeV(schoolAgeIndex - 1)
-            }
-          case None => false
-        }
-        val education = if (schooled) 0 else {
-          if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
-          else 1
-        }
-        //val coordinate = sampler.apply(rnd)
-        //val transformed = JTS.transform(coordinate, null, transform)
-        //val point = JTS.toGeometry(JTS.toDirectPosition(transformed, outCRS))
-        val cell = multinomial(relevantCellsArea)(rnd)
-        IndividualFeature(
-          ageCategory = ageIndex,
-          sex = sex,
-          education = education,
-          location = cell
-        )
-      }.filter(_.ageCategory>0)//remove people with age in 0-14
-      res
+          var tempIndex = -1
+          var tempP = -1.0
+          val schooled = age match {
+            case Some(a) =>
+              val schoolAgeIndex = SchoolAge.index(a)
+              tempIndex = schoolAgeIndex
+              if (schoolAgeIndex == 0) false else {
+                tempP = schoolAgeV(schoolAgeIndex - 1)
+                rnd.nextDouble() < schoolAgeV(schoolAgeIndex - 1)
+              }
+            case None => false
+          }
+          val education = if (schooled) 0 else {
+            if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
+            else 1
+          }
+          //val coordinate = sampler.apply(rnd)
+          //val transformed = JTS.transform(coordinate, null, transform)
+          //val point = JTS.toGeometry(JTS.toDirectPosition(transformed, outCRS))
+          val cell = multinomial(relevantCellsArea)(rnd)
+          IndividualFeature(
+            ageCategory = ageIndex,
+            sex = sex,
+            education = education,
+            location = cell
+          )
+        }.filter(_.ageCategory > 0) //remove people with age in 0-14
+        res
+      } else IndexedSeq()
     }
   }
 
