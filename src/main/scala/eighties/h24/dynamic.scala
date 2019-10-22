@@ -12,8 +12,8 @@ import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice}
 import monocle.function.all.{each, filterIndex, index, second}
 import monocle.macros.Lenses
 import monocle.{Lens, Traversal}
-import tools.lens._
 import tools.random._
+
 import scala.reflect.ClassTag
 import scala.util.Random
 
@@ -57,8 +57,11 @@ object dynamic {
     }
 
     object CellMatrix {
-      def get(location: Location)(cellMatrix: CellMatrix) = cellMatrix.get(Location.indexIso.reverse.get(location))
-      def update(location: Location)(cellMatrix: CellMatrix, value: Cell) = cellMatrix.update(Location.indexIso.reverse.get(location), value)
+      def get(location: Location)(cellMatrix: CellMatrix) = cellMatrix(location._1)(location._2)
+      def update(location: Location)(cellMatrix: CellMatrix, value: Cell) = cellMatrix(location._1)(location._2) = value
+      def modify(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix =
+        matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
+
     }
 
     object Cell {
@@ -66,7 +69,7 @@ object dynamic {
     }
 
     type MoveMatrix = Vector[(TimeSlice, CellMatrix)]
-    type CellMatrix = collection.mutable.Map[Short, Cell]
+    type CellMatrix = Array[Array[Cell]]
     type Cell = Map[AggregatedSocialCategory, Array[Move]]
 
     type LocatedCell = (TimeSlice, Int, Int) => Cell
@@ -81,17 +84,11 @@ object dynamic {
       } yield (ts, l, c)
 
     def getLocatedCellsFromCellMatrix(matrix: CellMatrix) =
-      matrix.toVector.map { case(l, cell) => Location.indexIso.get(l) -> cell }
+      for {
+        (line, i) <- matrix.zipWithIndex
+        (c, j) <- line.zipWithIndex
+      } yield ((i, j), c)
 
-//      for {
-//        (line, i) <- matrix.zipWithIndex
-//        (c, j) <- line.zipWithIndex
-//      } yield ((i, j), c)
-
-    def modifyCellMatrix(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix = {
-      matrix.map { case(l, cell) => l -> f(cell, Location.indexIso.get(l)) }
-      //matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
-    }
 
     def cell(location: Location) =
       index[Vector[Vector[Cell]], Int, Vector[Cell]](location._1) composeOptional index(location._2)
@@ -142,26 +139,57 @@ object dynamic {
 
     implicit val categoryPickler = transformPickler((i: Int) => SocialCategory.all(i))(s => SocialCategory.all.indexOf(s))
     implicit val aggregatedCategoryPickler = transformPickler((i: Int) => AggregatedSocialCategory.all(i))(s => AggregatedSocialCategory.all.indexOf(s))
-
-    def save(moves: MoveMatrix, file: File) = {
-      val os = new FileOutputStream(file.toJava)
-      try os.getChannel.write(Pickle.intoBytes(moves))
-      finally os.close()
-    }
+//
+//    def save(moves: MoveMatrix, file: File) = {
+//      val os = new FileOutputStream(file.toJava)
+//      try os.getChannel.write(Pickle.intoBytes(moves))
+//      finally os.close()
+//    }
 
     def saveCell(moves: MoveMatrix, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit) = {
       getLocatedCells(moves).foreach { case (t, l, cell) => save(t, l, cell) }
+    }
+
+    def save(moves: MoveMatrix, file: File) = {
+      file.parent.createDirectories()
+
+      import org.mapdb._
+      val db = DBMaker.fileDB(file.toJava)
+        .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
+        .fileMmapPreclearDisable()   // Make mmap file faster
+        .cleanerHackEnable().make
+
+      val map = db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[Any, Any]]
+
+
+      def save(timeSlice: TimeSlice, location: (Int, Int), cell: Cell) = {
+        map.put((location, timeSlice), cell)
+      }
+
+      MoveMatrix.saveCell(moves, save)
+      db.close()
+    }
+
+    def load(file: File) = {
+      import org.mapdb._
+      val db = DBMaker.fileDB(file.toJava)
+        .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
+        .fileMmapPreclearDisable()   // Make mmap file faster
+        .cleanerHackEnable().make
+
+      db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
+    }
 
 //      val os = new FileOutputStream((file / timeSlicesFileName).toJava)
 //      try os.getChannel.write(Pickle.intoBytes(moves.map(_._1)))
 //      finally os.close()
-    }
 
-    def load(file: File) = {
-      val is = new FileInputStream(file.toJava)
-      try Unpickle[MoveMatrix].fromBytes(is.getChannel.toMappedByteBuffer)
-      finally is.close()
-    }
+
+    //    def load(file: File) = {
+    //      val is = new FileInputStream(file.toJava)
+    //      try Unpickle[MoveMatrix].fromBytes(is.getChannel.toMappedByteBuffer)
+    //      finally is.close()
+    //    }
 
 //    def loadTimeSlices(file: File) = {
 //      val is = new FileInputStream((file / timeSlicesFileName).toJava)
@@ -169,11 +197,11 @@ object dynamic {
 //      finally is.close()
 //    }
 
-    def loadCell(file: File, t: TimeSlice, i: Int, j: Int) = {
-      val is = new FileInputStream((file / cellName(t, i, j)).toJava)
-      try Unpickle[Cell].fromBytes(is.getChannel.toMappedByteBuffer)
-      finally is.close()
-    }
+//    def loadCell(file: File, t: TimeSlice, i: Int, j: Int) = {
+//      val is = new FileInputStream((file / cellName(t, i, j)).toJava)
+//      try Unpickle[Cell].fromBytes(is.getChannel.toMappedByteBuffer)
+//      finally is.close()
+//    }
 
   }
 

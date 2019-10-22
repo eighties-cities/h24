@@ -20,6 +20,7 @@ object space {
   object Location {
     def lowerBound(l1: Location, l2: Location): Location = (math.min(l1._1, l2._1), math.min(l1._2, l2._2))
     def upperBound(l1: Location, l2: Location): Location = (math.max(l1._1, l2._1), math.max(l1._2, l2._2))
+
     def apply(i:Int, j:Int) = (i,j)
 
     def fromIndex(i: Short) = {
@@ -28,9 +29,10 @@ object space {
       (x, y)
     }
 
-
     def toIndex(l: Location) = (l._1 * Byte.MaxValue + l._2).toShort
-    def indexIso = monocle.Iso[Short, Location](fromIndex)(toIndex)
+
+    lazy val indexIso = monocle.Iso[Short, Location](fromIndex)(toIndex)
+
     def noLocationIndex = Short.MaxValue
   }
 
@@ -48,6 +50,7 @@ object space {
   }
 
   def cell(p: Coordinate) = ((p._1 / 1000.0).toInt, (p._2 / 1000.0).toInt)
+  def cellIndex(l: Location) = ((l._1 / 1000.0).toInt, (l._2 / 1000.0).toInt)
 
   def distance(l1: Location, l2: Location) = {
     val c1 = new org.locationtech.jts.geom.Coordinate(l1._1, l1._2)
@@ -63,6 +66,7 @@ object space {
     }
 
     def translate(boundingBox: BoundingBox)(location: Location) = (location._1 - boundingBox.minI, location._2 - boundingBox.minJ)
+
     def allLocations(boundingBox: BoundingBox) =
       for {
         i <- boundingBox.minI to boundingBox.maxI

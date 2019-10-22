@@ -3,12 +3,16 @@ package eighties.h24.tools
 import java.io.{File, FileOutputStream}
 
 import boopickle.Default.Pickle
-import eighties.h24.dynamic.MoveMatrix.{TimeSlice, cellName}
-import eighties.h24.generation.{WorldFeature, flowsFromEGT}
+import eighties.h24.dynamic.MoveMatrix
+import eighties.h24.dynamic.MoveMatrix.{MoveMatrix, TimeSlice, cellName}
+import eighties.h24.generation.{IndividualFeature, WorldFeature, flowsFromEGT}
 import eighties.h24.social.AggregatedSocialCategory
-import eighties.h24.space.Location
+import eighties.h24.space.{BoundingBox, Location}
+import org.geotools.data.{DataUtilities, Transaction}
+import org.geotools.data.shapefile.ShapefileDataStoreFactory
+import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import scopt._
-import org.mapdb._
+
 
 object MoveMatrixGenerator extends App {
 
@@ -38,21 +42,56 @@ object MoveMatrixGenerator extends App {
     )
   }
 
-  OParser.parse(parser, args, Config()) match {
+
+
+  def flowDestinationsFromEGT(bb: BoundingBox, matrix: MoveMatrix, res: File): Unit = {
+    val factory = new ShapefileDataStoreFactory
+    val geomfactory = new GeometryFactory()
+    val file = DataUtilities.urlToFile(res.toURI.toURL)
+    val dataStoreRes = factory.createDataStore(res.toURI.toURL)
+    val featureTypeNameRes = "Res"
+    val specsRes = "geom:Point:srid=3035"
+    val featureTypeRes = DataUtilities.createType(featureTypeNameRes, specsRes)
+    dataStoreRes.createSchema(featureTypeRes)
+    val typeNameRes = dataStoreRes.getTypeNames()(0)
+    val writerRes = dataStoreRes.getFeatureWriterAppend(typeNameRes, Transaction.AUTO_COMMIT)
+
+    def allMoves =
+      for {
+        (_, cm) <- matrix.toVector
+        c <- cm.flatten
+        (_, ms) <- c
+        m <- ms
+      } yield m
+
+    allMoves.foreach { v =>
+      val loc = MoveMatrix.Move.location.get(v)
+      val x = (bb.minI + loc._1) * 1000 + 500.0
+      val y = (bb.minJ + loc._2) * 1000 + 500.0
+      val valuesRes = Array[AnyRef](geomfactory.createPoint(new Coordinate(x, y)))
+      val simpleFeatureRes = writerRes.next
+      simpleFeatureRes.setAttributes(valuesRes)
+      writerRes.write
+    }
+
+    writerRes.close()
+  }
+
+    OParser.parse(parser, args, Config()) match {
     case Some(config) =>
       import eighties.h24.dynamic._
       import better.files._
 
 
-      //def ls(c: AggregatedSocialCategory) = MoveMatrix.moves { category => category == c } composeLens MoveMatrix.location
-      //config.moves.get.mkdirs()
-
-      val bb = WorldFeature.load(config.population.get.toScala).originalBoundingBox
+      def population = WorldFeature.load(config.population.get.toScala)
+      val bb = population.boundingBox
       println(bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
-
 
       val newMatrix = flowsFromEGT(bb, config.egt.get.toScala).get
       config.moves.get.toScala.parent.createDirectories()
+      config.moves.get.delete()
+
+      MoveMatrix.save(newMatrix, config.moves.get.toScala)
 
 //      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
 //        import boopickle.Default._
@@ -62,26 +101,9 @@ object MoveMatrixGenerator extends App {
 //        finally os.close()
 //      }
 
-      println(newMatrix.head._2.size)
 
-      val db = DBMaker.fileDB(config.moves.get)
-        .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
-        .fileMmapPreclearDisable()   // Make mmap file faster
-        .cleanerHackEnable().make
+      //flowDestinationsFromEGT(bb, newMatrix, config.moves.get)
 
-      val map = db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[Any, Any]]
-
-
-      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
-        println(s"put $timeSlice $location")
-        map.put((location, timeSlice), cell)
-      }
-
-      //import eighties.h24.dynamic._
-      //save(eighties.h24.generation.timeSlices.head, (0, 0),  Map(AggregatedSocialCategory.all.head -> Array(MoveMatrix.Move(7.toShort, 0.9.toFloat))))
-
-      MoveMatrix.saveCell(newMatrix, save)
-      db.close()
 
     case _ =>
   }

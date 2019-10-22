@@ -348,15 +348,15 @@ object  generation {
 
 
 
-  def generateFeatures( filter: String => Boolean,
-                        shapeData: ShapeData,
-                        popData:CSVData,
-                        eduData:CSVData,
-                        sexData:CSVData,
-                        cellsData:CellsData,
-                        rng: Random,
-                        pop: (Random, Seq[AreaID], AreaID => Option[MultiPolygon],Map[AreaID, Vector[Double]],Map[AreaID, Vector[Double]], Map[AreaID, Vector[Vector[Double]]], STRtree) => Seq[IndexedSeq[generation.IndividualFeature]]
-                      ) = {
+  def generateFeatures(
+    filter: String => Boolean,
+    shapeData: ShapeData,
+    popData:CSVData,
+    eduData:CSVData,
+    sexData:CSVData,
+    cellsData:CellsData,
+    rng: Random,
+    pop: (Random, Seq[AreaID], AreaID => Option[MultiPolygon], Map[AreaID, Vector[Double]], Map[AreaID, Vector[Double]], Map[AreaID, Vector[Vector[Double]]], STRtree) => Seq[IndexedSeq[generation.IndividualFeature]]) =
     for {
       (spatialUnit, geom) <- readGeometry(shapeData, filter)
       ageSex <- readAgeSex(popData)
@@ -364,7 +364,7 @@ object  generation {
       educationSex <- readEducationSex(sexData)
       cells <- readCells(cellsData)
     } yield pop(rng, spatialUnit, geom, ageSex, schoolAge, educationSex, cells).toIterator.flatten
-  }
+
   /*
   Generate the population without considering the geometries of the irises.
   This generates a population from the statistics at the iris level but by choosing randomly the cell in which the sampled individuals are placed.
@@ -732,27 +732,30 @@ object  generation {
 //    }
 
   def noMove(timeSlices: Vector[TimeSlice], i: Int, j: Int): MoveMatrix =
-    timeSlices.map { ts => ts -> collection.mutable.Map[Short, Cell]() }
-    /*timeSlices.map { ts =>
+    timeSlices.map { ts =>
       ts -> Array.tabulate(i, j) { (_, _) => Map.empty[AggregatedSocialCategory, Array[Move]] }
-    }*/
+    }
 
   def idw(power: Double)(location: Location, moves: Array[Move], neighborhood: Vector[(Location, Array[Move])]): Array[Move] = {
     if (moves.isEmpty) {
       val weights = neighborhood.map(v => v._1 -> 1.0 / scala.math.pow(space.distance(location, v._1), power)).toMap
-      val destinations = neighborhood.flatMap(_._2).map(Move.location.get).distinct.toArray
-      destinations.map { d =>
+      def destinationsIndex = neighborhood.flatMap(_._2).map(_.locationIndex).distinct.toArray
+
+      destinationsIndex.map { di =>
         val v = for {
           n <- neighborhood
-          value <- n._2.filter(m => Move.location.get(m) == d).map(Move.ratio.get)
+          value <- n._2.filter(m => m.locationIndex == di).map(Move.ratio.get)
         } yield (n._1, value)
-        val values = v.map(t => {
-          val w = weights(t._1)
-          (w, w * t._2)
-        })
-        val weightsum = values.map(_._1).sum
-        val valuessum = values.map(_._2).sum
-        Move(d, (valuessum / weightsum).toFloat)
+
+        val values =
+          v.map { t =>
+            val w = weights(t._1)
+            (w, w * t._2)
+          }
+
+        val weightSum = values.map(_._1).sum
+        val valuesSum = values.map(_._2).sum
+        Move(di, (valuesSum / weightSum).toFloat)
       }
     } else moves
   }
@@ -822,14 +825,14 @@ object  generation {
       moveMatrix.map {
         case (time, cellMatrix) =>
           val index = new STRtree()
-          getLocatedCellsFromCellMatrix(cellMatrix).foreach{ lc =>
+          getLocatedCellsFromCellMatrix(cellMatrix).foreach { lc =>
             val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
             index.insert(p.getEnvelopeInternal, lc)
           }
 
           //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
           //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
-          (time, modifyCellMatrix(interpolateFlows(index, idw(2.0)))(cellMatrix))
+          time -> CellMatrix.modify(interpolateFlows(index, idw(2.0)))(cellMatrix)
       }
 
     def getMovesFromOppositeSex(c: Cell): Cell =
@@ -841,19 +844,19 @@ object  generation {
 
 
     readFlowsFromEGT(aFile, location).map { l =>
-      val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
+      val (indexI, indexJ) = space.cellIndex(boundingBox.sideI, boundingBox.sideJ)
+      val nm = noMove(slices, indexI, indexJ)
+
       for {
         slice <- nm
         f <- l
       } {
-        val cell = CellMatrix.get(f.residence)(slice._2).getOrElse(Cell.empty)
-        CellMatrix.update(f.residence)(slice._2, addFlowToCell(cell, f, slice._1))
-       // slice._2(f.residence._1)(f.residence._2) = addFlowToCell(slice._2(f.residence._1)(f.residence._2), f, slice._1)
+        val cell = CellMatrix.get(space.cellIndex(f.residence))(slice._2)
+        CellMatrix.update(space.cellIndex(f.residence))(slice._2, addFlowToCell(cell, f, slice._1))
       }
 
-      nm.map {
-        case (c, cellMatrix) =>
-          c -> cellMatrix.map { case(l, cell) => l -> normalizeFlows(getMovesFromOppositeSex(cell)) }
+      interpolate(nm).map {
+        case (c, cellMatrix) => c -> CellMatrix.modify((cell, _) => normalizeFlows(getMovesFromOppositeSex(cell)))(cellMatrix)
       }
     }
 
