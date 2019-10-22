@@ -33,7 +33,6 @@ object EGTDestination extends App {
   def flowDestinationsFromEGT(bb: BoundingBox, matrix: MoveMatrix, res: File) = {
     val factory = new ShapefileDataStoreFactory
     val geomfactory = new GeometryFactory()
-    val file = DataUtilities.urlToFile(res.toJava.toURI.toURL)
     val dataStoreRes = factory.createDataStore(res.toJava.toURI.toURL)
     val featureTypeNameRes = "Res"
     val specsRes = "geom:Point:srid=3035"
