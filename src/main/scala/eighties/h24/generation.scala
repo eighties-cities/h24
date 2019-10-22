@@ -634,7 +634,7 @@ object  generation {
     }
   }
 
-  case class Flow(id:String, timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
+  case class Flow(/*id:String, */timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
 
   def readFlowsFromEGT(aFile: File, location: Coordinate=>space.Location) =
     withCSVReader(aFile)(SemicolonFormat){ reader =>
@@ -692,7 +692,7 @@ object  generation {
           if(date_start.isBefore(midnight) && date_end.isAfter(midnight)) Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), 24 * 60), TimeSlice(0, date_end.get(DateTimeFieldType.minuteOfDay())))
           else Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), date_end.get(DateTimeFieldType.minuteOfDay())))
 
-        timeSlices.map(s => Flow(line("ID_pers"), s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
+        timeSlices.map(s => Flow(/*line("ID_pers"), */s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
       }.filter(_.age.from >= 15)
     }
   }
