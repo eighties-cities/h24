@@ -810,21 +810,18 @@ object  generation {
       val dy = laea_coord.y - boundingBox.minJ * 1000
       space.cell(dx, dy)
     }
-    def index(matrix: TimeSlices) = matrix.map{
-      case (t,cm) =>
+
+    def interpolate(index: Vector[(TimeSlice, CellMatrix)]): TimeSlices = index.map {
+      case (time, cellMatrix) =>
         val index = new STRtree()
-        getLocatedCellsFromCellMatrix(cm).foreach{lc=>
+        getLocatedCellsFromCellMatrix(cellMatrix).foreach{lc=>
           val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
           index.insert(p.getEnvelopeInternal, lc)
         }
-        (t, cm, index)
-    }
 
-    def interpolate(index: Vector[(TimeSlice, CellMatrix, SpatialCellIndex)]): TimeSlices = index.map {
-      case (time, cellMatrix, ind) =>
         //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
         //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
-        (time, modifyCellMatrix(interpolateFlows(ind, idw(2.0)))(cellMatrix))
+        (time, modifyCellMatrix(interpolateFlows(index, idw(2.0)))(cellMatrix))
     }
 
     def getMovesFromOppositeSex(c: Cell): Cell =
@@ -848,7 +845,7 @@ object  generation {
 
     }.map {
       cells modify getMovesFromOppositeSex
-    }.map(index _).map(interpolate _).map {
+    }.map(interpolate _).map {
       cells modify normalizeFlows
     }
   }
