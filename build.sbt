@@ -21,6 +21,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq (
   "org.mapdb" % "mapdb" % "3.0.7",
+  "io.swaydb" %% "swaydb" % "0.10.8",
   "com.github.scopt" %% "scopt" % "4.0.0-RC2",
   "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion,
   "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,

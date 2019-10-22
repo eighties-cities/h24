@@ -56,46 +56,59 @@ object dynamic {
       def apply(location: Location, ratio: Float) = new Move(Location.toIndex(location), ratio)
     }
 
-    type TimeSlices = Vector[(TimeSlice, CellMatrix)]
-    type CellMatrix = Array[Array[Cell]]
+    object CellMatrix {
+      def get(location: Location)(cellMatrix: CellMatrix) = cellMatrix.get(Location.indexIso.reverse.get(location))
+      def update(location: Location)(cellMatrix: CellMatrix, value: Cell) = cellMatrix.update(Location.indexIso.reverse.get(location), value)
+    }
+
+    object Cell {
+      def empty: Cell = Map()
+    }
+
+    type MoveMatrix = Vector[(TimeSlice, CellMatrix)]
+    type CellMatrix = collection.mutable.Map[Short, Cell]
     type Cell = Map[AggregatedSocialCategory, Array[Move]]
+
     type LocatedCell = (TimeSlice, Int, Int) => Cell
     @Lenses case class Move(locationIndex: Short, ratio: Float)
 
     def cellName(t: TimeSlice, i: Int, j: Int) = s"${t.from}-${t.to}_${i}_$j"
 
-    def getLocatedCells(timeSlice: TimeSlices) =
+    def getLocatedCells(timeSlice: MoveMatrix) =
       for {
         (ts, matrix) <- timeSlice
-        (line, i) <- matrix.zipWithIndex
-        (c, j) <- line.zipWithIndex
-      } yield (ts, (i, j), c)
+        (l, c) <- getLocatedCellsFromCellMatrix(matrix)
+      } yield (ts, l, c)
 
     def getLocatedCellsFromCellMatrix(matrix: CellMatrix) =
-      for {
-        (line, i) <- matrix.zipWithIndex
-        (c, j) <- line.zipWithIndex
-      } yield ((i, j), c)
+      matrix.toVector.map { case(l, cell) => Location.indexIso.get(l) -> cell }
 
-    def modifyCellMatrix(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix =
-      matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
+//      for {
+//        (line, i) <- matrix.zipWithIndex
+//        (c, j) <- line.zipWithIndex
+//      } yield ((i, j), c)
+
+    def modifyCellMatrix(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix = {
+      matrix.map { case(l, cell) => l -> f(cell, Location.indexIso.get(l)) }
+      //matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
+    }
 
     def cell(location: Location) =
       index[Vector[Vector[Cell]], Int, Vector[Cell]](location._1) composeOptional index(location._2)
 
-    def cells =
-      each[TimeSlices, (TimeSlice, CellMatrix)] composeLens
-        second[(TimeSlice, CellMatrix), CellMatrix] composeIso arrayVectorIso composeTraversal each composeIso arrayVectorIso composeTraversal
-        each[Vector[Cell], Cell]
+//    def cells =
+//      each[MoveMatrix, (TimeSlice, CellMatrix)] composeLens
+//        second[(TimeSlice, CellMatrix), CellMatrix] composeIso arrayVectorIso composeTraversal each composeIso arrayVectorIso composeTraversal
+//        each[Vector[Cell], Cell]
 
-    def allMoves =
-      cells composeTraversal
-        each[Cell, Array[Move]] composeIso arrayVectorIso composeTraversal each[Vector[Move], Move]
-
-    def moves(category: AggregatedSocialCategory => Boolean) =
-      cells composeTraversal
-        filterIndex[Cell, AggregatedSocialCategory, Array[Move]](category) composeIso arrayVectorIso composeTraversal
-        each[Vector[Move], Move]
+//    def allMoves =
+//      cells composeTraversal
+//        each[Cell, Array[Move]] composeIso arrayVectorIso composeTraversal each[Vector[Move], Move]
+//
+//    def moves(category: AggregatedSocialCategory => Boolean) =
+//      cells composeTraversal
+//        filterIndex[Cell, AggregatedSocialCategory, Array[Move]](category) composeIso arrayVectorIso composeTraversal
+//        each[Vector[Move], Move]
 
 //    def movesInNeighborhood(cellMatrix: CellMatrix, category: AggregatedSocialCategory, neighbor: Location => Boolean) =
 //      for {
@@ -129,13 +142,13 @@ object dynamic {
     implicit val categoryPickler = transformPickler((i: Int) => SocialCategory.all(i))(s => SocialCategory.all.indexOf(s))
     implicit val aggregatedCategoryPickler = transformPickler((i: Int) => AggregatedSocialCategory.all(i))(s => AggregatedSocialCategory.all.indexOf(s))
 
-    def save(moves: TimeSlices, file: File) = {
+    def save(moves: MoveMatrix, file: File) = {
       val os = new FileOutputStream(file.toJava)
       try os.getChannel.write(Pickle.intoBytes(moves))
       finally os.close()
     }
 
-    def saveCell(moves: TimeSlices, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit) = {
+    def saveCell(moves: MoveMatrix, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit) = {
       getLocatedCells(moves).foreach { case (t, l, cell) => save(t, l, cell) }
 
 //      val os = new FileOutputStream((file / timeSlicesFileName).toJava)
@@ -145,7 +158,7 @@ object dynamic {
 
     def load(file: File) = {
       val is = new FileInputStream(file.toJava)
-      try Unpickle[TimeSlices].fromBytes(is.getChannel.toMappedByteBuffer)
+      try Unpickle[MoveMatrix].fromBytes(is.getChannel.toMappedByteBuffer)
       finally is.close()
     }
 
