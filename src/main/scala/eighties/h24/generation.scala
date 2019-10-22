@@ -714,7 +714,8 @@ object  generation {
             val v = MoveMatrix.Move.ratio.get(moves(index))
             c + (cat -> moves.updated(index, Move(flow.activity, v + intersection.toFloat)))
           }
-        case None => c + (cat -> Array(Move(flow.activity, intersection.toFloat)))
+        case None =>
+          c + (cat -> Array(Move(flow.activity, intersection.toFloat)))
       }
   }
 
@@ -730,10 +731,11 @@ object  generation {
 //       MoveMatrix.cell(flow.residence).modify { current => addFlowToCell(current, flow, time) }
 //    }
 
-  def noMove(timeSlices: Vector[TimeSlice], i: Int, j: Int): TimeSlices =
-    timeSlices.map { ts =>
+  def noMove(timeSlices: Vector[TimeSlice], i: Int, j: Int): MoveMatrix =
+    timeSlices.map { ts => ts -> collection.mutable.Map[Short, Cell]() }
+    /*timeSlices.map { ts =>
       ts -> Array.tabulate(i, j) { (_, _) => Map.empty[AggregatedSocialCategory, Array[Move]] }
-    }
+    }*/
 
   def idw(power: Double)(location: Location, moves: Array[Move], neighborhood: Vector[(Location, Array[Move])]): Array[Move] = {
     if (moves.isEmpty) {
@@ -755,17 +757,20 @@ object  generation {
     } else moves
   }
 
-  def interpolateFlows(index: SpatialCellIndex,
-                       interpolate: (Location, Array[Move], Vector[(Location, Array[Move])]) => Array[Move])
-                      (c: Cell, location: Location): Cell = {
+  def interpolateFlows(
+    index: SpatialCellIndex,
+    interpolate: (Location, Array[Move], Vector[(Location, Array[Move])]) => Array[Move])
+    (c: Cell, location: Location): Cell = {
     val movesByCat = movesInNeighborhoodByCategory(location, index)
     AggregatedSocialCategory.all.map {
       category =>
         def moves = c.getOrElse(category, Array())
-        def m = for {
-          (l, c) <- movesByCat
-          mm <- c.get(category)
-        } yield l -> mm
+        def m =
+          for {
+            (l, c) <- movesByCat
+            mm <- c.get(category)
+          } yield l -> mm
+
         category -> interpolate(location, moves, m.toVector)
     }.toMap
   }
@@ -798,11 +803,13 @@ object  generation {
     new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
   }
 
-  def flowsFromEGT(boundingBox: BoundingBox, aFile: File, slices: Vector[TimeSlice] = timeSlices) = {
+  def flowsFromEGT(boundingBox: BoundingBox, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
     val l2eCRS = CRS.decode("EPSG:27572")
     val outCRS = CRS.decode("EPSG:3035")
+
     val transform = CRS.findMathTransform(l2eCRS, outCRS, true)
     val geomFactory = new GeometryFactory
+
     def location(coord: Coordinate): space.Location = {
       val laea_coord = JTS.transform(coord, null, transform)
       // replace by cell...
@@ -810,22 +817,20 @@ object  generation {
       val dy = laea_coord.y - boundingBox.minJ * 1000
       space.cell(dx, dy)
     }
-    def index(matrix: TimeSlices) = matrix.map{
-      case (t,cm) =>
-        val index = new STRtree()
-        getLocatedCellsFromCellMatrix(cm).foreach{lc=>
-          val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
-          index.insert(p.getEnvelopeInternal, lc)
-        }
-        (t, cm, index)
-    }
 
-    def interpolate(index: Vector[(TimeSlice, CellMatrix, SpatialCellIndex)]): TimeSlices = index.map {
-      case (time, cellMatrix, ind) =>
-        //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
-        //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
-        (time, modifyCellMatrix(interpolateFlows(ind, idw(2.0)))(cellMatrix))
-    }
+    def interpolate(moveMatrix: MoveMatrix): MoveMatrix =
+      moveMatrix.map {
+        case (time, cellMatrix) =>
+          val index = new STRtree()
+          getLocatedCellsFromCellMatrix(cellMatrix).foreach{ lc =>
+            val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
+            index.insert(p.getEnvelopeInternal, lc)
+          }
+
+          //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
+          //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
+          (time, modifyCellMatrix(interpolateFlows(index, idw(2.0)))(cellMatrix))
+      }
 
     def getMovesFromOppositeSex(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
@@ -835,22 +840,23 @@ object  generation {
       }.toMap
 
 
-
     readFlowsFromEGT(aFile, location).map { l =>
       val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
       for {
         slice <- nm
         f <- l
-      } slice._2(f.residence._1)(f.residence._2) = addFlowToCell(slice._2(f.residence._1)(f.residence._2), f, slice._1)
-      nm
+      } {
+        val cell = CellMatrix.get(f.residence)(slice._2).getOrElse(Cell.empty)
+        CellMatrix.update(f.residence)(slice._2, addFlowToCell(cell, f, slice._1))
+       // slice._2(f.residence._1)(f.residence._2) = addFlowToCell(slice._2(f.residence._1)(f.residence._2), f, slice._1)
+      }
 
-      //l.foldLeft(noMove(slices, boundingBox.sideI, boundingBox.sideJ))(addFlowToMatrix)
-
-    }.map {
-      cells modify getMovesFromOppositeSex
-    }.map(index _).map(interpolate _).map {
-      cells modify normalizeFlows
+      nm.map {
+        case (c, cellMatrix) =>
+          c -> cellMatrix.map { case(l, cell) => l -> normalizeFlows(getMovesFromOppositeSex(cell)) }
+      }
     }
+
   }
 
 

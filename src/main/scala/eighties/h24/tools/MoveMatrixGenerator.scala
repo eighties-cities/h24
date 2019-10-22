@@ -52,7 +52,7 @@ object MoveMatrixGenerator extends App {
 
 
       val newMatrix = flowsFromEGT(bb, config.egt.get.toScala).get
-      config.moves.get.toScala.createDirectories()
+      config.moves.get.toScala.parent.createDirectories()
 
 //      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
 //        import boopickle.Default._
