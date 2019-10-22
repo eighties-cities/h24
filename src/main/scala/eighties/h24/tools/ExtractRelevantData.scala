@@ -1,11 +1,16 @@
 package eighties.h24.tools
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, FileOutputStream}
 
-import better.files
-import org.geotools.data.{DataUtilities, Transaction}
+import com.github.tototoshi.csv.CSVWriter
+import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
+import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet, WorkbookFactory}
+import org.geotools.data.Transaction
 import org.geotools.data.shapefile.{ShapefileDataStore, ShapefileDataStoreFactory}
 import org.geotools.factory.CommonFactoryFinder
+import org.geotools.geometry.jts.JTS
+import org.geotools.referencing.CRS
+import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
 import scopt.OParser
 
@@ -17,7 +22,7 @@ object ExtractRelevantData extends App {
                      grid: Option[File] = None,
                      infraPopulation: Option[File] = None,
                      infraFormation: Option[File] = None,
-                     deps: Option[Seq[Int]] = None,
+                     deps: Option[Seq[String]] = None,
                      output: Option[File] = None)
 
   val builder = OParser.builder[Config]
@@ -33,15 +38,15 @@ object ExtractRelevantData extends App {
         .required()
         .action((x, c) => c.copy(grid = Some(x)))
         .text("Grid shapefile"),
-//      opt[File]('p', "infraPopulation")
-//        .required()
-//        .action((x, c) => c.copy(infraPopulation = Some(x)))
-//        .text("infraPopulation XLS file"),
-//      opt[File]('f', "infraFormation")
-//        .required()
-//        .action((x, c) => c.copy(infraPopulation = Some(x)))
-//        .text("infraFormation XLS file"),
-      opt[Seq[Int]]('d', "deps")
+      opt[File]('p', "infraPopulation")
+        .required()
+        .action((x, c) => c.copy(infraPopulation = Some(x)))
+        .text("infraPopulation XLS file"),
+      opt[File]('f', "infraFormation")
+        .required()
+        .action((x, c) => c.copy(infraFormation = Some(x)))
+        .text("infraFormation XLS file"),
+      opt[Seq[String]]('d', "deps")
         .required()
         .action((x, c) => c.copy(deps = Some(x)))
         .text("deps"),
@@ -63,8 +68,11 @@ object ExtractRelevantData extends App {
       try {
         Try {
           val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
-          featureReader.filter(feature=>filter(feature)).foreach{feature=>writer.next.setAttributes(feature.getAttributes)}
-          writer.write()
+          featureReader.filter(feature=>filter(feature)).foreach{
+            feature=>
+              writer.next.setAttributes(feature.getAttributes)
+              writer.write()
+          }
           writer.close()
           dataStore.dispose()
         }
@@ -72,24 +80,48 @@ object ExtractRelevantData extends App {
     } finally store.dispose()
   }
 
+  def getStringCellValue(cell: Cell) = if (cell.getCellType == CellType.NUMERIC) cell.getNumericCellValue.toString else cell.getStringCellValue
+  def filterCSV(input: File, rowFilter: Row => Boolean, output: File) = {
+    val bos = new BufferedOutputStream(new FileOutputStream(output))
+    val lzmaos = new LZMACompressorOutputStream(bos)
+    val writer = CSVWriter.open(lzmaos)
+    import org.apache.poi.poifs.filesystem.POIFSFileSystem
+    val fs = new POIFSFileSystem(input)
+    import org.apache.poi.hssf.usermodel.HSSFWorkbook
+    val workbook = new HSSFWorkbook(fs.getRoot, true)
+    val sheet: Sheet = workbook.sheetIterator().next
+    (for (index <- 0 until 6) yield sheet.getRow(index)).foreach(row=>writer.writeRow((0 until row.getPhysicalNumberOfCells).map(col=>getStringCellValue((row.getCell(col))))))
+    (for (index <- 6 until sheet.getLastRowNum) yield sheet.getRow(index)).filter(rowFilter).foreach(row=>writer.writeRow((0 until row.getPhysicalNumberOfCells).map(col=>getStringCellValue(row.getCell(col)))))
+    fs.close()
+    writer.close()
+  }
   OParser.parse(parser, args, Config()) match {
     case Some(config) =>
-      import eighties.h24.dynamic._
-      import better.files._
       // create the output directory
       val outputDirectory = config.output.get
       outputDirectory.mkdirs()
+      println("deps = " + config.deps.get.mkString(","))
       // extract the relevant data from the input files and put them in the output directory
       val outputContourFile = new java.io.File(outputDirectory, config.contour.get.getName)
       println("outputContourFile = " + outputContourFile)
-      filterShape(config.contour.get, (feature:SimpleFeature)=>config.deps.get.contains(feature.getAttribute("DEPCOM").toString.substring(2)), outputContourFile)
+      filterShape(config.contour.get, (feature:SimpleFeature)=>config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2)), outputContourFile)
       val store = new ShapefileDataStore(outputContourFile.toURI.toURL)
       val ff = CommonFactoryFinder.getFilterFactory2()
       val featureSource = store.getFeatureSource
+      val l2eCRS = CRS.decode("EPSG:27572")
+      val l3CRS = CRS.decode("EPSG:2154")
+      val transform = CRS.findMathTransform(l2eCRS, l3CRS, true)
       val outputGridFile = new java.io.File(outputDirectory, config.grid.get.getName)
       println("outputGridFile = " + outputGridFile)
-      filterShape(config.grid.get, (feature:SimpleFeature)=>{!featureSource.getFeatures(ff.intersects(ff.property(store.getSchema.getGeometryDescriptor.getLocalName), ff.literal(feature.getDefaultGeometry))).isEmpty}, outputGridFile)
+      filterShape(config.grid.get, (feature:SimpleFeature)=>{!featureSource.getFeatures(ff.intersects(ff.property(store.getSchema.getGeometryDescriptor.getLocalName), ff.literal(JTS.transform(feature.getDefaultGeometry.asInstanceOf[Geometry], transform)))).isEmpty}, outputGridFile)
       store.dispose()
+      val outputInfraPopulationFile = new java.io.File(outputDirectory, config.infraPopulation.get.getName.substring(0, config.infraPopulation.get.getName.lastIndexOf("."))+".csv.lzma")
+      println("outputInfraPopulationFile = "+outputInfraPopulationFile)
+      filterCSV(config.infraPopulation.get, (row:Row)=>config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraPopulationFile)
+      val outputInfraFormationFile = new java.io.File(outputDirectory, config.infraFormation.get.getName.substring(0, config.infraFormation.get.getName.lastIndexOf("."))+".csv.lzma")
+      println("outputInfraFormationFile = "+outputInfraFormationFile)
+      filterCSV(config.infraFormation.get, (row:Row)=>config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraFormationFile)
+      println("done")
     case _ =>
   }
 
