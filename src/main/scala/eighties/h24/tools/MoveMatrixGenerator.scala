@@ -47,7 +47,6 @@ object MoveMatrixGenerator extends App {
   def flowDestinationsFromEGT(bb: BoundingBox, matrix: MoveMatrix, res: File): Unit = {
     val factory = new ShapefileDataStoreFactory
     val geomfactory = new GeometryFactory()
-    val file = DataUtilities.urlToFile(res.toURI.toURL)
     val dataStoreRes = factory.createDataStore(res.toURI.toURL)
     val featureTypeNameRes = "Res"
     val specsRes = "geom:Point:srid=3035"

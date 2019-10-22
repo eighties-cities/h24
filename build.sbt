@@ -8,7 +8,7 @@ scalaVersion := "2.12.10"
 
 val monocleVersion = "1.5.0"
 
-val geotoolsVersion = "21.0"
+val geotoolsVersion = "22.0"
 
 val breezeVersion = "0.13.2"
 
@@ -34,8 +34,8 @@ libraryDependencies ++= Seq (
   "org.geotools" % "gt-image" % geotoolsVersion,
   "org.geotools" % "gt-coverage" % geotoolsVersion,
   "org.geotools" % "gt-geojson" % geotoolsVersion,
-  "com.github.tototoshi" %% "scala-csv" % "1.3.4",
-  "org.apache.commons" % "commons-compress" % "1.11",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.5",
+  "org.apache.commons" % "commons-compress" % "1.19",
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "org.tukaani" % "xz" % "1.6",
   "com.github.pathikrit" %% "better-files" % "2.17.1",
@@ -46,7 +46,8 @@ libraryDependencies ++= Seq (
   "io.suzaku" %% "boopickle" % "1.2.6",
   "javax.media" % "jai_core" % "1.1.3" from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
   "javax.media" % "jai_codec" % "1.1.3",
-  "javax.media" % "jai_imageio" % "1.1"
+  "javax.media" % "jai_imageio" % "1.1",
+  "org.apache.poi" % "poi-ooxml"  % "4.1.1"
 )
  
 addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
