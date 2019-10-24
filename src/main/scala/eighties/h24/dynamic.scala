@@ -49,6 +49,7 @@ object dynamic {
 
     case class TimeSlice(from: Int, to: Int) {
       def length = to - from
+      override def toString = s"${from}_${to}"
     }
 
     object Move {
@@ -57,7 +58,7 @@ object dynamic {
     }
 
     object CellMatrix {
-      def get(location: Location)(cellMatrix: CellMatrix) = cellMatrix(location._1)(location._2)
+      def get(location: Location)(cellMatrix: CellMatrix) = {println(s"location = ${location._1}, ${location._2}");cellMatrix(location._1)(location._2)}
       def update(location: Location)(cellMatrix: CellMatrix, value: Cell) = cellMatrix(location._1)(location._2) = value
       def modify(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix =
         matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }

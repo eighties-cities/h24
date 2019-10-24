@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+  <meta name="description" content="Canvas Flowmap Layer with LeafletJS." />
+
+  <title>Canvas Flowmap Layer with LeafletJS</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3/dist/leaflet.css" />
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 0;
+      left: 0;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <div id="map"></div>
+
+  <!-- first load LeafletJS -->
+  <script src="https://unpkg.com/leaflet@1.3/dist/leaflet.js"></script>
+
+  <!-- load Esri Leaflet because we want to use an Esri basemap -->
+  <script src="https://unpkg.com/esri-leaflet@2.1/dist/esri-leaflet.js"></script>
+
+  <!-- load animation tweening lib requirement for CanvasFlowMapLayer -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/17.2.0/Tween.min.js"></script>
+
+  <!-- then load CanvasFlowMapLayer -->
+  <script src="./CanvasFlowmapLayer.js"></script>
+
+  <!-- also load 3rd-party CSV parsing libary just for this demo  -->
+  <script src="https://unpkg.com/papaparse@latest/papaparse.min.js"></script>
+  
+  <script>
+    var map = L.map('map');
+
+    if (L.Browser.mobile) {
+      map.setView([48.856613, 2.352222], 10);
+    } else {
+      map.setView([48.856613, 2.352222], 10);
+    }
+
+    L.esri.basemapLayer('DarkGray').addTo(map);
+
+    Papa.parse('./flows.csv', {
+      download: true,
+      header: true,
+      dynamicTyping: true,
+      skipEmptyLines: true,
+      complete: function(results) {
+        var geoJsonFeatureCollection = {
+          type: 'FeatureCollection',
+          features: results.data.map(function(datum) {
+            return {
+              type: 'Feature',
+              geometry: {
+                type: 'Point',
+                coordinates: [datum.s_lon, datum.s_lat]
+              },
+              properties: datum
+            }
+          })
+        };
+
+        var oneToManyFlowmapLayer = L.canvasFlowmapLayer(geoJsonFeatureCollection, {
+          originAndDestinationFieldIds: {
+            originUniqueIdField: 'origin_id',
+            originGeometry: {
+              x: 'origin_lon',
+              y: 'origin_lat'
+            },
+            destinationUniqueIdField: 'destination_id',
+            destinationGeometry: {
+              x: 'destination_lon',
+              y: 'destination_lat'
+            }
+          },
+          pathDisplayMode: 'selection',
+          animationStarted: false,
+          animationEasingFamily: 'Cubic',
+          animationEasingType: 'In',
+          animationDuration: 2000
+        }).addTo(map);
+
+        // since this demo is using the optional "pathDisplayMode" as "selection",
+        // it is up to the developer to wire up a click or mouseover listener
+        // and then call the "selectFeaturesForPathDisplay()" method to inform the layer
+        // which Bezier paths need to be drawn
+        oneToManyFlowmapLayer.on('click', function(e) {
+          if (e.sharedOriginFeatures.length) {
+            oneToManyFlowmapLayer.selectFeaturesForPathDisplay(e.sharedOriginFeatures, 'SELECTION_NEW');
+          }
+          if (e.sharedDestinationFeatures.length) {
+            oneToManyFlowmapLayer.selectFeaturesForPathDisplay(e.sharedDestinationFeatures, 'SELECTION_NEW');
+          }
+        });
+
+        // immediately select an origin point for Bezier path display,
+        // instead of waiting for the first user click event to fire
+        oneToManyFlowmapLayer.selectFeaturesForPathDisplayById('origin_id', origin_60_120, true, 'SELECTION_NEW');
+      }
+    });
+
+  </script>
+
+</body>
+
+</html>

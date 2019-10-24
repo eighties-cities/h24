@@ -49,7 +49,7 @@ object SimpleGridExample extends App {
   println(Calendar.getInstance.getTime + " Saving population")
   val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
   WorldFeature.save(
-    WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox),
+    WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, 1000),
     //    File("results/population.bin")
     File("results/SimpleGrid10.bin")
   )

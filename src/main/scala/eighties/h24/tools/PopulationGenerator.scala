@@ -8,10 +8,10 @@ import eighties.h24.space._
 import scopt.OParser
 
 object PopulationGenerator extends App {
-
   case class Config(
                      contour: Option[java.io.File] = None,
                      grid: Option[java.io.File] = None,
+                     gridSize: Option[Int] = None,
                      infraPopulation: Option[java.io.File] = None,
                      infraFormation: Option[java.io.File] = None,
                      randomPop: Option[Boolean] = Some(false),
@@ -30,6 +30,10 @@ object PopulationGenerator extends App {
         .required()
         .action((x, c) => c.copy(grid = Some(x)))
         .text("Grid shapefile"),
+      opt[Int]('s', "grid size")
+        .required()
+        .action((x, c) => c.copy(gridSize = Some(x)))
+        .text("Grid size"),
       opt[java.io.File]('p', "infraPopulation")
         .required()
         .action((x, c) => c.copy(infraPopulation = Some(x)))
@@ -81,9 +85,10 @@ object PopulationGenerator extends App {
         if (config.randomPop.get) generatePopulation2 else generatePopulation
       ).get.toArray
       println(Calendar.getInstance.getTime + " Relocating population")
+      val gridSize = config.gridSize.get
       val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
 
-      def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox))
+      def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))
 
       val relocatedFeatures = features.map(relocate)
       println(Calendar.getInstance.getTime + " Saving population")
@@ -91,7 +96,7 @@ object PopulationGenerator extends App {
       // make sure the output directory structure exists
       config.output.get.getParentFile.mkdirs()
       WorldFeature.save(
-        WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox),
+        WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
         config.output.get.toScala
       )
   }

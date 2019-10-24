@@ -68,7 +68,7 @@ object  generation {
     }
   }
 
-  @Lenses case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox)
+  @Lenses case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int)
 
 
   @Lenses case class IndividualFeature(
@@ -811,7 +811,7 @@ object  generation {
     new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
   }
 
-  def flowsFromEGT(boundingBox: BoundingBox, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
+  def flowsFromEGT(boundingBox: BoundingBox, gridSize: Int, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
     val l2eCRS = CRS.decode("EPSG:27572")
     val outCRS = CRS.decode("EPSG:3035")
 
@@ -821,9 +821,9 @@ object  generation {
     def location(coord: Coordinate): space.Location = {
       val laea_coord = JTS.transform(coord, null, transform)
       // replace by cell...
-      val dx = laea_coord.x - boundingBox.minI * 1000
-      val dy = laea_coord.y - boundingBox.minJ * 1000
-      space.cell(dx, dy)
+      val dx = laea_coord.x - boundingBox.minI// * 1000
+      val dy = laea_coord.y - boundingBox.minJ// * 1000
+      space.cell((dx, dy), gridSize)
     }
 
     def interpolate(moveMatrix: MoveMatrix): MoveMatrix =
@@ -849,15 +849,16 @@ object  generation {
 
 
     readFlowsFromEGT(aFile, location).map { l =>
-      val (indexI, indexJ) = space.cellIndex(boundingBox.sideI, boundingBox.sideJ)
+      val (indexI, indexJ) = space.cellIndex((boundingBox.sideI, boundingBox.sideJ), gridSize)
+      println("indexI = " + indexI + ", indexJ = " + indexJ)
       val nm = noMove(slices, indexI, indexJ)
 
       for {
         slice <- nm
         f <- l
       } {
-        val cell = CellMatrix.get(space.cellIndex(f.residence))(slice._2)
-        CellMatrix.update(space.cellIndex(f.residence))(slice._2, addFlowToCell(cell, f, slice._1))
+        val cell = CellMatrix.get(f.residence)(slice._2)
+        CellMatrix.update(f.residence)(slice._2, addFlowToCell(cell, f, slice._1))
       }
 
       interpolate(nm).map {

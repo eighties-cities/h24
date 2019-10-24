@@ -49,14 +49,16 @@ object space {
     } yield (i + di, j + dj)
   }
 
-  def cell(p: Coordinate) = ((p._1 / 1000.0).toInt, (p._2 / 1000.0).toInt)
-  def cellIndex(l: Location) = ((l._1 / 1000.0).toInt, (l._2 / 1000.0).toInt)
+  def cell(p: Coordinate, gridSize: Int) = ((p._1 / gridSize).toInt, (p._2 / gridSize).toInt)
+  def cellIndex(l: Location, gridSize: Int) = ((l._1 / gridSize).toInt, (l._2 / gridSize).toInt)
 
   def distance(l1: Location, l2: Location) = {
     val c1 = new org.locationtech.jts.geom.Coordinate(l1._1, l1._2)
     val c2 = new org.locationtech.jts.geom.Coordinate(l2._1, l2._2)
     c1.distance(c2)
   }
+
+  def scale(size: Int)(location: Location): Location = (location._1 / size, location._2 / size)
 
   object BoundingBox {
     def apply[T](content: Array[T], location: T => Location): BoundingBox = {
@@ -65,7 +67,7 @@ object space {
       BoundingBox(minI = minI, maxI = maxI, minJ = minJ, maxJ = maxJ)
     }
 
-    def translate(boundingBox: BoundingBox)(location: Location) = (location._1 - boundingBox.minI, location._2 - boundingBox.minJ)
+    def translate(boundingBox: BoundingBox)(location: Location): Location = (location._1 - boundingBox.minI, location._2 - boundingBox.minJ)
 
     def allLocations(boundingBox: BoundingBox) =
       for {
@@ -85,8 +87,8 @@ object space {
       val boundingBox = BoundingBox(individuals, location.get)
 
       def relocate =
-        home.modify(BoundingBox.translate(boundingBox)) andThen
-          location.modify(BoundingBox.translate(boundingBox))
+        home.modify(BoundingBox.translate(boundingBox)) andThen// TODO: add Scale?
+          location.modify(BoundingBox.translate(boundingBox))// TODO: add Scale?
 
       World(
         individuals.map(relocate),

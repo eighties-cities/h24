@@ -65,8 +65,8 @@ object MoveMatrixGenerator extends App {
 
     allMoves.foreach { v =>
       val loc = MoveMatrix.Move.location.get(v)
-      val x = (bb.minI + loc._1) * 1000 + 500.0
-      val y = (bb.minJ + loc._2) * 1000 + 500.0
+      val x = bb.minI + loc._1 * 1000 + 500.0
+      val y = bb.minJ + loc._2 * 1000 + 500.0
       val valuesRes = Array[AnyRef](geomfactory.createPoint(new Coordinate(x, y)))
       val simpleFeatureRes = writerRes.next
       simpleFeatureRes.setAttributes(valuesRes)
@@ -84,9 +84,13 @@ object MoveMatrixGenerator extends App {
 
       def population = WorldFeature.load(config.population.get.toScala)
       val bb = population.boundingBox
-      println(bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
+      println("boundingBox = " + bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
+      val obb = population.originalBoundingBox
+      println("originalBoundingBox = " + obb.minI + " " + obb.minJ + " " + obb.sideI + " " + obb.sideJ)
+      val gridSize = population.gridSize
+      println("gridSize = " + gridSize)
 
-      val newMatrix = flowsFromEGT(bb, config.egt.get.toScala).get
+      val newMatrix = flowsFromEGT(obb, gridSize, config.egt.get.toScala).get
       config.moves.get.toScala.parent.createDirectories()
       config.moves.get.delete()
 
