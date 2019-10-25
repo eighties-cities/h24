@@ -84,3 +84,7 @@ To see what the matrix looks like, you can generate a CSV file containing (parts
 sbt -J-Xmx4G "runMain eighties.h24.tools.EGTShapefileExporter -p results_IDF/population.bin -m results_IDF/moves.bin -o flowmap/flows.csv"
 ```
 You can now see it if you open the index.html in you browser.
+You can also filter the flows using a timeslice, sex, age, education & a percentile:
+```shell script
+sbt -J-Xmx4G "runMain eighties.h24.tools.EGTCSVExporter -p results_IDF/population.bin -m results_IDF/moves.bin -t 0 -a 1 -s 1 -e 1 -o flowmap/flows_0_1_1_1_0.5.csv"
+```

@@ -95,7 +95,7 @@
         if (geoJsonFeature.properties.isOrigin) {
           return {
             renderer: canvasRenderer, // recommended to use L.canvas()
-            radius: 2,
+            radius: 3,
             weight: 1,
             stroke: false,
             color: 'rgb(195, 255, 62)',
@@ -105,7 +105,7 @@
         } else {
           return {
             renderer: canvasRenderer,
-            radius: 1.5,
+            radius: 2,
             weight: 0.25,
             stroke: false,
             color: 'rgb(17, 142, 170)',
