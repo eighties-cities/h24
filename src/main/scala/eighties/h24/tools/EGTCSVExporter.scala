@@ -156,7 +156,7 @@ object EGTCSVExporter extends App {
               groupBy(_.locationIndex).//group by destination
               keys.//keep only location
               map(Location.fromIndex).//get location tuple
-              filter{case (di: Int,dj: Int)=>(di % 2 == 0)&&(dj % 2 == 0)}.//keep only even destinations
+              //filter{case (di: Int,dj: Int)=>(di % 2 == 0)&&(dj % 2 == 0)}.//keep only even destinations
               foreach {case (di: Int, dj: Int) => writer.writeRow(originSeq ++ Seq(s"destination_${di}_$dj")++toLatLon(di,dj))}
             //          }}
           }

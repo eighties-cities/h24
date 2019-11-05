@@ -82,7 +82,7 @@ object PopulationGenerator extends App {
         sexData,
         cellsData,
         new util.Random(42),
-        if (config.randomPop.get) generatePopulation2 else generatePopulation
+        if (config.randomPop.get) generatePopulationRandomly else generatePopulation
       ).get.toArray
       println(Calendar.getInstance.getTime + " Relocating population")
       val gridSize = config.gridSize.get

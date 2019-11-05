@@ -3,7 +3,7 @@ package eighties.h24
 import java.io.{FileInputStream, FileOutputStream}
 
 import better.files._
-import org.locationtech.jts.geom.Envelope
+import org.locationtech.jts.geom.{Coordinate, Envelope}
 import org.locationtech.jts.index.strtree.STRtree
 import eighties.h24.tools.random.multinomial
 import eighties.h24.social._
@@ -124,9 +124,10 @@ object dynamic {
         moves <- c.get(category)
       } yield l -> moves
 
+    def distance(location1: Location, location2: Location) = new Coordinate(location1._1, location1._2).distance(new Coordinate(location2._1, location2._2))
     def movesInNeighborhoodByCategory(location: Location, index: STRtree) =
       for {
-        (l, c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell])
+        (l, c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell]).filter(x=> distance(x._1, location) <= 10)
       } yield l -> c
     //category: AggregatedSocialCategory
 

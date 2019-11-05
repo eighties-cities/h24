@@ -22,6 +22,9 @@
 }(function(L) {
   // layer source code
   var canvasRenderer = L.canvas();
+  var interpolate = function(p1, p2, t) {
+    return p1 + (p2 - p1) * t;
+  };
 
   var CanvasFlowmapLayer = L.GeoJSON.extend({
     options: {
@@ -46,9 +49,10 @@
         symbol: {
           // use canvas styling options (compare to CircleMarker styling below)
           strokeStyle: 'rgba(255, 0, 51, 0.8)',
+          strokeOpacity: 0.1,
           lineWidth: 0.75,
           lineCap: 'round',
-          shadowColor: 'rgb(255, 0, 51)',
+          shadowColor: 'rgb(255, 0, 51, 1.0)',
           shadowBlur: 1.5
         }
       },
@@ -57,11 +61,11 @@
         type: 'simple',
         symbol: {
           // use canvas styling options (compare to CircleMarker styling below)
-          strokeStyle: 'rgb(255, 46, 88)',
+          strokeStyle: 'rgba(255, 46, 88, 0.75)',
           lineWidth: 1.25,
           lineDashOffsetSize: 4, // custom property used with animation sprite sizes
           lineCap: 'round',
-          shadowColor: 'rgb(255, 0, 51)',
+          shadowColor: 'rgba(255, 0, 51, 0.75)',
           shadowBlur: 2
         }
       },
@@ -631,7 +635,7 @@
             symbol = this._getSymbolProperties(feature, this.options.canvasBezierStyle);
             ctx.beginPath();
             this._applyCanvasLineSymbol(ctx, symbol, screenOriginPoint, screenDestinationPoint);
-            ctx.stroke();
+            //ctx.stroke();
             ctx.closePath();
           }
         }
@@ -667,12 +671,23 @@
 
     _applyCanvasLineSymbol: function(ctx, symbolObject, screenOriginPoint, screenDestinationPoint) {
       ctx.lineCap = symbolObject.lineCap;
-      ctx.lineWidth = symbolObject.lineWidth;
       ctx.strokeStyle = symbolObject.strokeStyle;
+      ctx.strokeOpacity = 0.1;
+      ctx.fillOpacity = 0.1;
+      ctx.globalAlpha = 0.2;
       ctx.shadowBlur = symbolObject.shadowBlur;
       ctx.shadowColor = symbolObject.shadowColor;
+      ctx.lineWidth = symbolObject.lineWidth * 10.0;
       ctx.moveTo(screenOriginPoint.x, screenOriginPoint.y);
-      ctx.bezierCurveTo(screenOriginPoint.x, screenDestinationPoint.y, screenDestinationPoint.x, screenDestinationPoint.y, screenDestinationPoint.x, screenDestinationPoint.y);
+      for (var i = 1; i <= 10; i++) {
+        var x = interpolate(screenOriginPoint.x,screenDestinationPoint.x,i/10.0);
+        var y = interpolate(screenOriginPoint.y,screenDestinationPoint.y,i/10.0);
+        ctx.lineTo(x,y);
+        ctx.stroke();
+        ctx.moveTo(x, y);
+        ctx.lineWidth = symbolObject.lineWidth * 10.0 * (1.0-i/10.0);
+      }
+      //ctx.bezierCurveTo(screenOriginPoint.x, screenDestinationPoint.y, screenDestinationPoint.x, screenDestinationPoint.y, screenDestinationPoint.x, screenDestinationPoint.y);
     },
 
     _animateCanvasLineSymbol: function(ctx, symbolObject, screenOriginPoint, screenDestinationPoint) {

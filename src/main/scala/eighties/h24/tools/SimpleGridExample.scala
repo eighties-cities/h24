@@ -35,7 +35,7 @@ object SimpleGridExample extends App {
     sexData,
     cellsData,
     new util.Random(42),
-    generatePopulation2,
+    generatePopulationRandomly,
   ).get.toArray
 
   // Relocate population

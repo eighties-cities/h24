@@ -375,7 +375,7 @@ object  generation {
   This generates a population from the statistics at the iris level but by choosing randomly the cell in which the sampled individuals are placed.
   The "geometry" parameter is only given to have the same signature...
    */
-  def generatePopulation2(
+  def generatePopulationRandomly(
     rnd: Random,
     irises: Seq[AreaID],
     geometry: AreaID => Option[MultiPolygon],
