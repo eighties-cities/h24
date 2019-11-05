@@ -83,7 +83,7 @@ object PopulationGenerator extends App {
         sexData,
         cellsData,
         new util.Random(42),
-        if (config.randomPop.get) generatePopulation2 else generatePopulation
+        if (config.randomPop.get) generatePopulationRandomly else generatePopulation
       ).get.toArray
 
       log("Relocating population")
@@ -105,5 +105,6 @@ object PopulationGenerator extends App {
         WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
         config.output.get
       )
+    case _ =>
   }
 }
