@@ -1,6 +1,8 @@
 #!/bin/bash
 
 mkdir data
+
+(
 cd data || exit
 
 # Get Contour Iris file from IGN
@@ -28,3 +30,4 @@ unzip infra-population-2012.zip
 wget https://www.insee.fr/fr/statistiques/fichier/2028265/infra-formation-2012.zip
 unzip infra-formation-2012.zip
 \rm infra-formation-2012.zip
+)

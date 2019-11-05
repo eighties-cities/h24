@@ -152,17 +152,16 @@ object dynamic {
       getLocatedCells(moves).foreach { case (t, l, cell) => save(t, l, cell) }
     }
 
-    def save(moves: MoveMatrix, file: File) = {
-      file.parent.createDirectories()
+    def save(moves: MoveMatrix, file: java.io.File) = {
+      file.getParentFile.mkdirs
 
       import org.mapdb._
-      val db = DBMaker.fileDB(file.toJava)
+      val db = DBMaker.fileDB(file)
         .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
         .fileMmapPreclearDisable()   // Make mmap file faster
         .cleanerHackEnable().make
 
       val map = db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[Any, Any]]
-
 
       def save(timeSlice: TimeSlice, location: (Int, Int), cell: Cell) = {
         map.put((location, timeSlice), cell)
@@ -172,9 +171,9 @@ object dynamic {
       db.close()
     }
 
-    def load(file: File) = {
+    def load(file: java.io.File) = {
       import org.mapdb._
-      val db = DBMaker.fileDB(file.toJava)
+      val db = DBMaker.fileDB(file)
         .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
         .fileMmapPreclearDisable()   // Make mmap file faster
         .cleanerHackEnable().make
