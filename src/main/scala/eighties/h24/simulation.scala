@@ -54,7 +54,7 @@ object simulation {
     socialCategory: I => AggregatedSocialCategory,
     rng: Random) = {
 
-    def worldFeature = WorldFeature.load(File(population.toURI))
+    def worldFeature = WorldFeature.load(population)
     val bbox = worldFeature.originalBoundingBox
 
     val moveMatrix = MoveMatrix.load(moves)

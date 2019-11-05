@@ -103,7 +103,7 @@ object PopulationGenerator extends App {
 
       WorldFeature.save(
         WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
-        config.output.get.toScala
+        config.output.get
       )
   }
 }

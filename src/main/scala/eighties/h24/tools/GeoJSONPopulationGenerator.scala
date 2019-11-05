@@ -29,7 +29,7 @@ object GeoJSONPopulationGenerator extends App {
   val featureType = DataUtilities.createType(featureTypeName, specs)
   val featureCollection = new DefaultFeatureCollection(featureTypeName, featureType)
   println(Calendar.getInstance.getTime + " Loading population")
-  val res = WorldFeature.load(outputPath / inputFileName)
+  val res = WorldFeature.load((outputPath / inputFileName).toJava)
   println(Calendar.getInstance.getTime + " Converting population")
   val geometryFactory = new GeometryFactory
   for {

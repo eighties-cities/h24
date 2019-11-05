@@ -76,13 +76,13 @@ object MoveMatrixGenerator extends App {
     writerRes.close()
   }
 
-    OParser.parse(parser, args, Config()) match {
+  OParser.parse(parser, args, Config()) match {
     case Some(config) =>
       import eighties.h24.dynamic._
       import better.files._
 
 
-      def population = WorldFeature.load(config.population.get.toScala)
+      def population = WorldFeature.load(config.population.get)
       val bb = population.boundingBox
       println("boundingBox = " + bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
       val obb = population.originalBoundingBox

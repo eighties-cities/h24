@@ -69,7 +69,7 @@ object EGTShapefileExporter extends App {
     case Some(c) =>
       import better.files._
 
-      val world = WorldFeature.load(c.population.get.toScala)
+      val world = WorldFeature.load(c.population.get)
       val bb = world.originalBoundingBox
       println("obbox = " + bb.minI + " " + bb.minJ)
       val gridSize = world.gridSize

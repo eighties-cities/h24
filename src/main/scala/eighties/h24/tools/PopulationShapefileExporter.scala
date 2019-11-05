@@ -48,7 +48,7 @@ object PopulationShapefileExporter extends App {
       dataStore.createSchema(featureType)
       val typeName = dataStore.getTypeNames()(0)
       val writer = dataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
-      val res = WorldFeature.load(config.population.get.toScala)
+      val res = WorldFeature.load(config.population.get)
       val bbox = res.originalBoundingBox
       val gridSize = res.gridSize
       for {

@@ -54,15 +54,15 @@ object  generation {
   object WorldFeature {
     import boopickle.Default._
 
-    def save(features: WorldFeature, file: File)  = {
-      file.parent.createDirectories()
-      val os = new FileOutputStream(file.toJava)
+    def save(features: WorldFeature, file: java.io.File)  = {
+      file.getParentFile.mkdirs()
+      val os = new FileOutputStream(file)
       try os.getChannel.write(Pickle.intoBytes(features))
       finally os.close()
     }
 
-    def load(file: File) = {
-      val is = new FileInputStream(file.toJava)
+    def load(file: java.io.File) = {
+      val is = new FileInputStream(file)
       try Unpickle[WorldFeature].fromBytes(is.getChannel.toMappedByteBuffer)
       finally is.close()
     }

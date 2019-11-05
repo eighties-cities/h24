@@ -51,7 +51,7 @@ object SimpleGridExample extends App {
   WorldFeature.save(
     WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, 1000),
     //    File("results/population.bin")
-    File("results/SimpleGrid10.bin")
+    File("results/SimpleGrid10.bin").toJava
   )
 
 }
