@@ -6,6 +6,7 @@ import better.files._
 import eighties.h24.generation._
 import eighties.h24.space._
 import scopt.OParser
+import Log._
 
 object PopulationGenerator extends App {
   case class Config(
@@ -72,7 +73,7 @@ object PopulationGenerator extends App {
       val shpData = ShapeData(contourIRISFile, "DCOMIRIS", Some(Seq(cleanIris))) //changes name after the 2014 update
       val cellsData = CellsData(cellFile, "x_laea", "y_laea", "ind")
 
-      println(Calendar.getInstance.getTime + " Generating population")
+      log("Generating population")
 //      val randomPop = false
       val features = generateFeatures(
         _ => true,
@@ -84,14 +85,18 @@ object PopulationGenerator extends App {
         new util.Random(42),
         if (config.randomPop.get) generatePopulation2 else generatePopulation
       ).get.toArray
-      println(Calendar.getInstance.getTime + " Relocating population")
+
+      log("Relocating population")
+
       val gridSize = config.gridSize.get
       val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
 
       def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))
 
       val relocatedFeatures = features.map(relocate)
-      println(Calendar.getInstance.getTime + " Saving population")
+
+      log("Saving population")
+
       val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
       // make sure the output directory structure exists
       config.output.get.getParentFile.mkdirs()

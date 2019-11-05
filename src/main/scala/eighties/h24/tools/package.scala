@@ -1,5 +1,7 @@
 package eighties.h24
 
+import java.util.Calendar
+
 import monocle.Iso
 import spire.ClassTag
 
@@ -20,5 +22,10 @@ import spire.ClassTag
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 package object tools {
+
+  object Log {
+    def log(msg: => String) = println(Calendar.getInstance.getTime + " " + msg)
+  }
+
 
 }
