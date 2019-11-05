@@ -70,5 +70,6 @@ object PopulationShapefileExporter extends App {
       }
       writer.close()
       dataStore.dispose()
+    case _ =>
   }
 }
