@@ -55,10 +55,10 @@ object random {
   def multinomial[T](values: Array[(T, Double)])(implicit random: Random): T = {
     var sum = 0.0
     var previousSum = 0.0
-    val cdf = Array.ofDim[Double](values.size + 1)
+    val cdf = Array.ofDim[Double](values.length + 1)
 
     for {
-      i <- 0 until values.size
+      i <- values.indices
     } {
       sum = previousSum + values(i)._2
       cdf(i + 1) = sum

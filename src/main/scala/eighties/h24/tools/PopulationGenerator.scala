@@ -1,7 +1,5 @@
 package eighties.h24.tools
 
-import java.util.Calendar
-
 import better.files._
 import eighties.h24.generation._
 import eighties.h24.space._
@@ -74,7 +72,6 @@ object PopulationGenerator extends App {
       val cellsData = CellsData(cellFile, "x_laea", "y_laea", "ind")
 
       log("Generating population")
-//      val randomPop = false
       val features = generateFeatures(
         _ => true,
         shpData,

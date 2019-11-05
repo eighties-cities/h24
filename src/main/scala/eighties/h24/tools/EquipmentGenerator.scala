@@ -50,9 +50,9 @@ object EquipmentGenerator extends App {
       iris.asInstanceOf[AnyRef])
     val simpleFeature = writer.next
     simpleFeature.setAttributes(values)
-    writer.write
+    writer.write()
     bw.write(s"$cellX, $cellY\n")
   }
-  writer.close
-  bw.close
+  writer.close()
+  bw.close()
 }

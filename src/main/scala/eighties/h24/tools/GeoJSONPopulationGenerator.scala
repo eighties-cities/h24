@@ -33,7 +33,7 @@ object GeoJSONPopulationGenerator extends App {
   println(Calendar.getInstance.getTime + " Converting population")
   val geometryFactory = new GeometryFactory
   for {
-    (feature, i) <- res.individualFeatures.zipWithIndex
+    (feature, _) <- res.individualFeatures.zipWithIndex
   } {
     import feature._
     val point = geometryFactory.createPoint(new Coordinate(location._1.toDouble + 500.0, location._2.toDouble + 500.0))

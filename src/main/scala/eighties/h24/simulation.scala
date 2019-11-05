@@ -17,9 +17,6 @@ package eighties.h24
  *
  */
 
-
-import better.files.File
-
 import eighties.h24.dynamic.MoveMatrix.{LocatedCell, TimeSlice}
 import eighties.h24.dynamic.{MoveMatrix, assignFixNightLocation, assignRandomDayLocation}
 import eighties.h24.generation.{IndividualFeature, WorldFeature, timeSlices}

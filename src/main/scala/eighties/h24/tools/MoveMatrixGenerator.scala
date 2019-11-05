@@ -1,13 +1,11 @@
 package eighties.h24.tools
 
-import java.io.{File, FileOutputStream}
+import java.io.File
 
-import boopickle.Default.Pickle
 import eighties.h24.dynamic.MoveMatrix
-import eighties.h24.dynamic.MoveMatrix.{MoveMatrix, TimeSlice, cellName}
-import eighties.h24.generation.{IndividualFeature, WorldFeature, flowsFromEGT}
-import eighties.h24.social.AggregatedSocialCategory
-import eighties.h24.space.{BoundingBox, Location}
+import eighties.h24.dynamic.MoveMatrix.MoveMatrix
+import eighties.h24.generation.{WorldFeature, flowsFromEGT}
+import eighties.h24.space.BoundingBox
 import org.geotools.data.{DataUtilities, Transaction}
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
@@ -46,7 +44,7 @@ object MoveMatrixGenerator extends App {
 
   def flowDestinationsFromEGT(bb: BoundingBox, matrix: MoveMatrix, res: File): Unit = {
     val factory = new ShapefileDataStoreFactory
-    val geomfactory = new GeometryFactory()
+    val geomFactory = new GeometryFactory()
     val dataStoreRes = factory.createDataStore(res.toURI.toURL)
     val featureTypeNameRes = "Res"
     val specsRes = "geom:Point:srid=3035"
@@ -57,7 +55,7 @@ object MoveMatrixGenerator extends App {
 
     def allMoves =
       for {
-        (_, cm) <- matrix.toVector
+        (_, cm) <- matrix
         c <- cm.flatten
         (_, ms) <- c
         m <- ms
@@ -67,10 +65,10 @@ object MoveMatrixGenerator extends App {
       val loc = MoveMatrix.Move.location.get(v)
       val x = bb.minI + loc._1 * 1000 + 500.0
       val y = bb.minJ + loc._2 * 1000 + 500.0
-      val valuesRes = Array[AnyRef](geomfactory.createPoint(new Coordinate(x, y)))
+      val valuesRes = Array[AnyRef](geomFactory.createPoint(new Coordinate(x, y)))
       val simpleFeatureRes = writerRes.next
       simpleFeatureRes.setAttributes(valuesRes)
-      writerRes.write
+      writerRes.write()
     }
 
     writerRes.close()
@@ -80,15 +78,13 @@ object MoveMatrixGenerator extends App {
     case Some(config) =>
       import eighties.h24.dynamic._
       import better.files._
-
-
       def population = WorldFeature.load(config.population.get)
       val bb = population.boundingBox
-      println("boundingBox = " + bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
+      Log.log("boundingBox = " + bb.minI + " " + bb.minJ + " " + bb.sideI + " " + bb.sideJ)
       val obb = population.originalBoundingBox
-      println("originalBoundingBox = " + obb.minI + " " + obb.minJ + " " + obb.sideI + " " + obb.sideJ)
+      Log.log("originalBoundingBox = " + obb.minI + " " + obb.minJ + " " + obb.sideI + " " + obb.sideJ)
       val gridSize = population.gridSize
-      println("gridSize = " + gridSize)
+      Log.log("gridSize = " + gridSize)
 
       val newMatrix = flowsFromEGT(obb, bb, gridSize, config.egt.get.toScala).get
       config.moves.get.toScala.parent.createDirectories()

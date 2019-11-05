@@ -9,6 +9,7 @@ import com.github.tototoshi.csv.{CSVFormat, CSVReader, DefaultCSVFormat}
 import dynamic.MoveMatrix
 import dynamic.MoveMatrix.{Cell, TimeSlice}
 import eighties.h24.social._
+import eighties.h24.tools.Log
 import space.{BoundingBox, Location}
 import eighties.h24.tools.random._
 import eighties.h24.tools.math._
@@ -143,7 +144,8 @@ object  generation {
 
   }
 
-  def applyRegex(regexes : Seq[Regex],l:Seq[String] ):Seq[String] = {
+  @scala.annotation.tailrec
+  def applyRegex(regexes : Seq[Regex], l:Seq[String] ):Seq[String] = {
     if (regexes.nonEmpty) {
       val fPopped :: newRList = regexes
       val newSList = l.updated(fPopped.pos,fPopped.regex(l(fPopped.pos)))
@@ -401,7 +403,7 @@ object  generation {
         new RasterVariate(educationSexV(1).toArray, educationSexSizes))
 
       val res = (0 until total.toInt).map{ _ =>
-        if (i % 1000000 == 0) println(Calendar.getInstance.getTime + " ind " + i)
+        if (i % 1000000 == 0) Log.log(Calendar.getInstance.getTime + " ind " + i)
         i = i + 1
 
         val sample = ageSexVariate.compute(rnd)
@@ -826,17 +828,20 @@ object  generation {
       space.cell((dx, dy), gridSize)
     }
 
+    /*
+     * Interpolate an entire move matrix.
+     * @param moveMatrix the input matrix
+     * @return an interpolated matrix
+     */
     def interpolate(moveMatrix: MoveMatrix): MoveMatrix =
       moveMatrix.map {
         case (time, cellMatrix) =>
+          // create a spatial index to find the neighbors in the matrix
           val index = new STRtree()
           getLocatedCellsFromCellMatrix(cellMatrix).foreach { lc =>
             val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
             index.insert(p.getEnvelopeInternal, lc)
           }
-
-          //def nei(l1: Location)(l2: Location) = space.distance(l1, l2) < 10
-          //        (time, modifyCellMatrix(interpolateFlows(cellMatrix, nei, idw(2.0)))(cellMatrix))
           time -> CellMatrix.modify(interpolateFlows(index, idw(2.0)))(cellMatrix)
       }
 
@@ -850,7 +855,6 @@ object  generation {
 
     readFlowsFromEGT(aFile, location).map { l =>
       val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
-
       for {
         slice <- nm
         f <- l
@@ -863,8 +867,5 @@ object  generation {
         case (c, cellMatrix) => c -> CellMatrix.modify((cell, _) => normalizeFlows(getMovesFromOppositeSex(cell)))(cellMatrix)
       }
     }
-
   }
-
-
 }
