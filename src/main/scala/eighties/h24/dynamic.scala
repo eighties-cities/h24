@@ -58,7 +58,7 @@ object dynamic {
     }
 
     object CellMatrix {
-      def get(location: Location)(cellMatrix: CellMatrix) = {println(s"location = ${location._1}, ${location._2}");cellMatrix(location._1)(location._2)}
+      def get(location: Location)(cellMatrix: CellMatrix) = cellMatrix(location._1)(location._2)
       def update(location: Location)(cellMatrix: CellMatrix, value: Cell) = cellMatrix(location._1)(location._2) = value
       def modify(f: (Cell, Location) => Cell)(matrix: CellMatrix): CellMatrix =
         matrix.zipWithIndex.map { case(line, i) => line.zipWithIndex.map { case(c, j) => f(c, (i, j)) } }
@@ -261,6 +261,8 @@ object dynamic {
       (individuals, j) <- line.zipWithIndex
     } {
       val workTimeMovesFromCell = locatedCell(dayTimeSlice, i, j)
+
+      assert(workTimeMovesFromCell != null)
 
       for {
         individual <- individuals

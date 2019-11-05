@@ -47,7 +47,7 @@ object simulation {
     moves: java.io.File,
     moveType: MoveType,
     buildIndividual: (IndividualFeature, Random) => I,
-    exchange: (World[I], Int, Random) => World[I],
+    exchange: (World[I], Int, Int, Random) => World[I],
     stableDestinations: Lens[I, Map[TimeSlice, Location]],
     location: Lens[I, Location],
     home: Lens[I, Location],
@@ -70,7 +70,7 @@ object simulation {
             case MoveType.No => world
           }
 
-          def convicted = exchange(moved, slice, rng)
+          def convicted = exchange(moved, day, slice, rng)
 
           simulateOneDay(convicted, bb, t, locatedCell, day, slice + 1)
       }
