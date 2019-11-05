@@ -240,7 +240,7 @@ object dynamic {
       (line, i) <- Index.cells.get(Index.indexIndividuals(world, home)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
     } {
-      val cell = locatedCell(timeSlice, i, j)
+      lazy val cell = locatedCell(timeSlice, i, j)
       for {
         individual <- individuals
       } {
