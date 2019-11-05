@@ -25,7 +25,7 @@ object SimpleGridExample extends App {
 
   // Generate population
 
-  println(Calendar.getInstance.getTime + "Generating population")
+  Log.log(Calendar.getInstance.getTime + "Generating population")
   val randomPop = true
   val features = generateFeatures(
     _ => true,
@@ -40,13 +40,13 @@ object SimpleGridExample extends App {
 
   // Relocate population
 
-  println(Calendar.getInstance.getTime + " Relocating population")
+  Log.log(Calendar.getInstance.getTime + " Relocating population")
 
   val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
   def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox))
   val relocatedFeatures = features.map(relocate)
 
-  println(Calendar.getInstance.getTime + " Saving population")
+  Log.log(Calendar.getInstance.getTime + " Saving population")
   val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
   WorldFeature.save(
     WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, 1000),

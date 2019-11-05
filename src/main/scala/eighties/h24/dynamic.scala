@@ -1,15 +1,12 @@
 package eighties.h24
 
-import java.io.{FileInputStream, FileOutputStream}
-
-import better.files._
 import org.locationtech.jts.geom.{Coordinate, Envelope}
 import org.locationtech.jts.index.strtree.STRtree
 import eighties.h24.tools.random.multinomial
 import eighties.h24.social._
 import space.{Attraction, Index, Location, World}
 import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice}
-import monocle.function.all.{each, filterIndex, index, second}
+import monocle.function.all.index
 import monocle.macros.Lenses
 import monocle.{Lens, Traversal}
 import tools.random._
@@ -49,7 +46,7 @@ object dynamic {
 
     case class TimeSlice(from: Int, to: Int) {
       def length = to - from
-      override def toString = s"${from}_${to}"
+      override def toString = s"${from}_$to"
     }
 
     object Move {
@@ -129,7 +126,6 @@ object dynamic {
       for {
         (l, c) <- index.query(new Envelope(location._1 - 10, location._1 + 10, location._2 - 10, location._2 + 10)).toArray.toSeq.map(_.asInstanceOf[LCell]).filter(x=> distance(x._1, location) <= 10)
       } yield l -> c
-    //category: AggregatedSocialCategory
 
     def location = MoveMatrix.Move.location
     def moveRatio = MoveMatrix.Move.ratio
@@ -227,7 +223,7 @@ object dynamic {
     }
 
   def moveInMoveMatrix[I: ClassTag](world: World[I], locatedCell: LocatedCell, timeSlice: TimeSlice, stableDestination: I => Map[TimeSlice, Location], location: Lens[I, Location], home: I => Location, socialCategory: I => AggregatedSocialCategory, random: Random): World[I] = {
-    def sampleMoveInMatrix[I](cellMoves: Cell, location: Lens[I, Location], socialCategory: I => AggregatedSocialCategory)(individual: I) =
+    def sampleMoveInMatrix[J](cellMoves: Cell, location: Lens[J, Location], socialCategory: J => AggregatedSocialCategory)(individual: J) =
       sampleDestinationInMoveMatrix(cellMoves, individual, socialCategory, random) match {
         case Some(destination) => location.set(destination)(individual)
         case None => individual
@@ -305,6 +301,4 @@ object dynamic {
   }
 
   def logistic(l: Double, k: Double, x0: Double)(x: Double) = l / (1.0 +  math.exp(-k * (x - x0)))
-
-
 }

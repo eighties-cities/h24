@@ -96,9 +96,9 @@ object EGTCSVExporter extends App {
 
       val world = WorldFeature.load(c.population.get)
       val bb = world.originalBoundingBox
-      println("obbox = " + bb.minI + " " + bb.minJ)
+      Log.log("obbox = " + bb.minI + " " + bb.minJ)
       val gridSize = world.gridSize
-      println("gridSize = " + gridSize)
+      Log.log("gridSize = " + gridSize)
 
       val moveTimeLapse = MoveMatrix.load(c.moves.get)
 

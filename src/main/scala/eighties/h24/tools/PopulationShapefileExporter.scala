@@ -2,7 +2,6 @@ package eighties.h24.tools
 
 import java.io.{File => JFile}
 
-import better.files._
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataUtilities, Transaction}

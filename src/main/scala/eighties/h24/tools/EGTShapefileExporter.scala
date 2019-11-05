@@ -17,7 +17,6 @@ package eighties.h24.tools
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import eighties.h24.dynamic.MoveMatrix.{Cell, MoveMatrix, TimeSlice}
 import eighties.h24.dynamic._
 import eighties.h24.generation.WorldFeature
 import eighties.h24.space.BoundingBox
@@ -26,6 +25,8 @@ import org.geotools.data.{DataUtilities, Transaction}
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import scopt._
 import java.io.File
+
+import eighties.h24.dynamic.MoveMatrix.{Cell, TimeSlice}
 
 /**
  */
@@ -42,7 +43,6 @@ object EGTShapefileExporter extends App {
     import builder._
     OParser.sequence(
       programName("move matrix tester"),
-      // option -f, --foo
       opt[File]('p', "population")
         .required()
         .action((x, c) => c.copy(population = Some(x)))
@@ -62,29 +62,23 @@ object EGTShapefileExporter extends App {
     )
   }
 
-
-
-
   OParser.parse(parser, args, Config()) match {
     case Some(c) =>
       import better.files._
 
       val world = WorldFeature.load(c.population.get)
       val bb = world.originalBoundingBox
-      println("obbox = " + bb.minI + " " + bb.minJ)
+      Log.log("obbox = " + bb.minI + " " + bb.minJ)
       val gridSize = world.gridSize
-      println("gridSize = " + gridSize)
-
+      Log.log("gridSize = " + gridSize)
       val moveTimeLapse = MoveMatrix.load(c.moves.get)
 
       val outputPath = c.output.get.toScala
       outputPath.parent.createDirectories()
 
-
       def flowDestinationsFromEGT(bb: BoundingBox, gridSize: Int, res: java.io.File) = {
         val factory = new ShapefileDataStoreFactory
-        val geomfactory = new GeometryFactory()
-
+        val geomFactory = new GeometryFactory()
         val dataStoreRes = factory.createDataStore(res.toURI.toURL)
         val featureTypeNameRes = "Res"
         val specsRes = "geom:Point:srid=3035"
@@ -95,19 +89,17 @@ object EGTShapefileExporter extends App {
 
         import collection.JavaConverters._
 
-        def allMoves =
-          moveTimeLapse.values().iterator().asInstanceOf[java.util.Iterator[Cell]].asScala.flatMap(c => c.values.flatten)
+        def allMoves = moveTimeLapse.values().iterator().asInstanceOf[java.util.Iterator[Cell]].asScala.flatMap(_.values.flatten)
 
-        def allCellsWithMoves =
-          moveTimeLapse.keySet().iterator().asInstanceOf[java.util.Iterator[((Int,Int), TimeSlice)]].asScala.filter(x=>moveTimeLapse.get(x).asInstanceOf[Cell].flatMap(_._2).nonEmpty).map(_._1)
+        def allCellsWithMoves = moveTimeLapse.keySet().iterator().asInstanceOf[java.util.Iterator[((Int,Int), TimeSlice)]].asScala.filter(x=>moveTimeLapse.get(x).asInstanceOf[Cell].flatMap(_._2).nonEmpty).map(_._1)
 
         def write(i: Int, j: Int): Unit = {
           val x = bb.minI + i * gridSize + gridSize / 2
           val y = bb.minJ + j * gridSize + gridSize / 2
-          val valuesRes = Array[AnyRef](geomfactory.createPoint(new Coordinate(x, y)))
+          val valuesRes = Array[AnyRef](geomFactory.createPoint(new Coordinate(x, y)))
           val simpleFeatureRes = writerRes.next
           simpleFeatureRes.setAttributes(valuesRes)
-          writerRes.write
+          writerRes.write()
         }
         if (c.destination.get) {
           allMoves.map(MoveMatrix.Move.location.get).foreach { loc=>write(loc._1, loc._2)}
@@ -117,7 +109,6 @@ object EGTShapefileExporter extends App {
         writerRes.close()
         dataStoreRes.dispose()
       }
-
 
       flowDestinationsFromEGT(bb, gridSize, outputPath.toJava)
     case _ =>

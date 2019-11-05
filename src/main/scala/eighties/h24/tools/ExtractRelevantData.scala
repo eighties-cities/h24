@@ -4,7 +4,7 @@ import java.io.{BufferedOutputStream, File, FileOutputStream}
 
 import com.github.tototoshi.csv.CSVWriter
 import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
-import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet, WorkbookFactory}
+import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet}
 import org.geotools.data.Transaction
 import org.geotools.data.shapefile.{ShapefileDataStore, ShapefileDataStoreFactory}
 import org.geotools.factory.CommonFactoryFinder
@@ -90,7 +90,7 @@ object ExtractRelevantData extends App {
     import org.apache.poi.hssf.usermodel.HSSFWorkbook
     val workbook = new HSSFWorkbook(fs.getRoot, true)
     val sheet: Sheet = workbook.sheetIterator().next
-    (for (index <- 0 until 6) yield sheet.getRow(index)).foreach(row=>writer.writeRow((0 until row.getPhysicalNumberOfCells).map(col=>getStringCellValue((row.getCell(col))))))
+    (for (index <- 0 until 6) yield sheet.getRow(index)).foreach(row=>writer.writeRow((0 until row.getPhysicalNumberOfCells).map(col=>getStringCellValue(row.getCell(col)))))
     (for (index <- 6 until sheet.getLastRowNum) yield sheet.getRow(index)).filter(rowFilter).foreach(row=>writer.writeRow((0 until row.getPhysicalNumberOfCells).map(col=>getStringCellValue(row.getCell(col)))))
     fs.close()
     writer.close()
@@ -100,10 +100,10 @@ object ExtractRelevantData extends App {
       // create the output directory
       val outputDirectory = config.output.get
       outputDirectory.mkdirs()
-      println("deps = " + config.deps.get.mkString(","))
+      Log.log("deps = " + config.deps.get.mkString(","))
       // extract the relevant data from the input files and put them in the output directory
       val outputContourFile = new java.io.File(outputDirectory, config.contour.get.getName)
-      println("outputContourFile = " + outputContourFile)
+      Log.log("outputContourFile = " + outputContourFile)
       filterShape(config.contour.get, (feature:SimpleFeature)=>config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2)), outputContourFile)
       val store = new ShapefileDataStore(outputContourFile.toURI.toURL)
       val ff = CommonFactoryFinder.getFilterFactory2()
@@ -112,16 +112,16 @@ object ExtractRelevantData extends App {
       val l3CRS = CRS.decode("EPSG:2154")
       val transform = CRS.findMathTransform(l2eCRS, l3CRS, true)
       val outputGridFile = new java.io.File(outputDirectory, config.grid.get.getName)
-      println("outputGridFile = " + outputGridFile)
+      Log.log("outputGridFile = " + outputGridFile)
       filterShape(config.grid.get, (feature:SimpleFeature)=>{!featureSource.getFeatures(ff.intersects(ff.property(store.getSchema.getGeometryDescriptor.getLocalName), ff.literal(JTS.transform(feature.getDefaultGeometry.asInstanceOf[Geometry], transform)))).isEmpty}, outputGridFile)
       store.dispose()
       val outputInfraPopulationFile = new java.io.File(outputDirectory, config.infraPopulation.get.getName.substring(0, config.infraPopulation.get.getName.lastIndexOf("."))+".csv.lzma")
-      println("outputInfraPopulationFile = "+outputInfraPopulationFile)
+      Log.log("outputInfraPopulationFile = "+outputInfraPopulationFile)
       filterCSV(config.infraPopulation.get, (row:Row)=>config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraPopulationFile)
       val outputInfraFormationFile = new java.io.File(outputDirectory, config.infraFormation.get.getName.substring(0, config.infraFormation.get.getName.lastIndexOf("."))+".csv.lzma")
-      println("outputInfraFormationFile = "+outputInfraFormationFile)
+      Log.log("outputInfraFormationFile = "+outputInfraFormationFile)
       filterCSV(config.infraFormation.get, (row:Row)=>config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraFormationFile)
-      println("done")
+      Log.log("done")
     case _ =>
   }
 

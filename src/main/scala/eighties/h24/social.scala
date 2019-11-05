@@ -68,7 +68,7 @@ object social {
       case Age.From0To14 | Age.From15To29 => Age1
       case Age.From30To44 | Age.From45To59 => Age2
       case Age.From60To74 | Age.Above75 => Age3
-      case default: Age => Age1
+      case _: Age => Age1
     }
 
     def all = Array(Age1, Age2, Age3)
