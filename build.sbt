@@ -13,9 +13,9 @@ val geotoolsVersion = "22.0"
 val breezeVersion = "0.13.2"
 
 resolvers ++= Seq(
-  "osgeo" at "http://download.osgeo.org/webdav/geotools/",
-  "geosolutions" at "http://maven.geo-solutions.it/",
-  "geotoolkit" at "http://maven.geotoolkit.org/",
+  "osgeo" at "https://download.osgeo.org/webdav/geotools/",
+  "geosolutions" at "https://maven.geo-solutions.it/",
+  "geotoolkit" at "https://maven.geotoolkit.org/",
 )
 
 
@@ -44,7 +44,7 @@ libraryDependencies ++= Seq (
   "org.typelevel"  %% "squants"  % "1.1.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.2.6",
-  "javax.media" % "jai_core" % "1.1.3" from "http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
+  "javax.media" % "jai_core" % "1.1.3" from "https://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
   "javax.media" % "jai_codec" % "1.1.3",
   "javax.media" % "jai_imageio" % "1.1",
   "org.apache.poi" % "poi-ooxml"  % "4.1.1"
