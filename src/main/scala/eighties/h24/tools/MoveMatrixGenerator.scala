@@ -94,20 +94,7 @@ object MoveMatrixGenerator extends App {
       config.moves.get.toScala.parent.createDirectories()
       config.moves.get.delete()
 
-      MoveMatrix.save(newMatrix, config.moves.get.toScala)
-
-//      def save(timeSlice: TimeSlice, location: (Int, Int), cell: MoveMatrix.Cell) = {
-//        import boopickle.Default._
-//        val (i, j) = location
-//        val os = new FileOutputStream((config.moves.get.toScala / MoveMatrix.cellName(timeSlice, i, j)).toJava)
-//        try os.getChannel.write(Pickle.intoBytes[MoveMatrix.Cell](cell))
-//        finally os.close()
-//      }
-
-
-      //flowDestinationsFromEGT(bb, newMatrix, config.moves.get)
-
-
+      MoveMatrix.save(newMatrix, config.moves.get)
     case _ =>
   }
 

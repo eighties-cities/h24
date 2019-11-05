@@ -100,6 +100,7 @@ object PopulationGenerator extends App {
       val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
       // make sure the output directory structure exists
       config.output.get.getParentFile.mkdirs()
+
       WorldFeature.save(
         WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
         config.output.get.toScala

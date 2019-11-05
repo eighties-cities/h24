@@ -100,7 +100,7 @@ object EGTCSVExporter extends App {
       val gridSize = world.gridSize
       println("gridSize = " + gridSize)
 
-      val moveTimeLapse = MoveMatrix.load(c.moves.get.toScala)
+      val moveTimeLapse = MoveMatrix.load(c.moves.get)
 
       val outputPath = c.output.get.toScala
       outputPath.parent.createDirectories()
