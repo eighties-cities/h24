@@ -105,5 +105,6 @@ object PopulationGenerator extends App {
         WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
         config.output.get.toScala
       )
+    case _ =>
   }
 }
