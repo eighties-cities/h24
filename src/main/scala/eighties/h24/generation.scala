@@ -813,7 +813,7 @@ object  generation {
     new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
   }
 
-  def flowsFromEGT(boundingBox: BoundingBox, gridSize: Int, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
+  def flowsFromEGT(originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
     val l2eCRS = CRS.decode("EPSG:27572")
     val outCRS = CRS.decode("EPSG:3035")
 
@@ -823,8 +823,8 @@ object  generation {
     def location(coord: Coordinate): space.Location = {
       val laea_coord = JTS.transform(coord, null, transform)
       // replace by cell...
-      val dx = laea_coord.x - boundingBox.minI// * 1000
-      val dy = laea_coord.y - boundingBox.minJ// * 1000
+      val dx = laea_coord.x - originalBoundingBox.minI// * 1000
+      val dy = laea_coord.y - originalBoundingBox.minJ// * 1000
       space.cell((dx, dy), gridSize)
     }
 
@@ -854,10 +854,7 @@ object  generation {
 
 
     readFlowsFromEGT(aFile, location).map { l =>
-      val (indexI, indexJ) = space.cellIndex((boundingBox.sideI, boundingBox.sideJ), gridSize)
-      Log.log("indexI = " + indexI + ", indexJ = " + indexJ)
-      val nm = noMove(slices, indexI, indexJ)
-
+      val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
       for {
         slice <- nm
         f <- l

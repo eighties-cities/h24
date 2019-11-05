@@ -86,7 +86,7 @@ object MoveMatrixGenerator extends App {
       val gridSize = population.gridSize
       Log.log("gridSize = " + gridSize)
 
-      val newMatrix = flowsFromEGT(obb, gridSize, config.egt.get.toScala).get
+      val newMatrix = flowsFromEGT(obb, bb, gridSize, config.egt.get.toScala).get
       config.moves.get.toScala.parent.createDirectories()
       config.moves.get.delete()
 
