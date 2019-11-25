@@ -705,25 +705,31 @@ object  generation {
   }
   import MoveMatrix._
 
-
+  /*
+  Add the contribution of a flow to a cell for the given time slice.
+   */
   def addFlowToCell(c: Cell, flow: Flow, timeSlice: TimeSlice): Cell = {
+    // find out if the flow contributes to the time slice
     val intersection = overlap(flow.timeSlice, timeSlice).toDouble
-
-    val cat = AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
-
+    // if not, do not modify cell
     if(intersection <= 0.0) c
-    else
+    else {
+      // category of the flow
+      val cat = AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
       c.get(cat) match {
         case Some(moves) =>
+          // get the index of the flow destination (activity) in the moves
           val index = moves.indexWhere { m => Move.location.get(m) == flow.activity }
-          if (index == -1) c + (cat -> moves.:+ (Move(flow.activity, intersection.toFloat)))
+          if (index == -1) c + (cat -> (moves :+ Move(flow.activity, intersection.toFloat)))
           else {
+            // since the cell already contains flows for this location, just add the flow contribution
             val v = MoveMatrix.Move.ratio.get(moves(index))
             c + (cat -> moves.updated(index, Move(flow.activity, v + intersection.toFloat)))
           }
         case None =>
           c + (cat -> Array(Move(flow.activity, intersection.toFloat)))
       }
+    }
   }
 
   def normalizeFlows(c: Cell): Cell =
