@@ -67,7 +67,7 @@ sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationShapefileExporter -p results_
 
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
-sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/presence_semaine_GLeRoux.csv.lzma -p results_IDF/population.bin -m results_IDF/moves.bin"
+sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID_ParisRegion.csv.lzma -p results_IDF/population.bin -m results_IDF/moves.bin"
 ```
 
 ### Optionally, check your matrix

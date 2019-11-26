@@ -49,6 +49,26 @@ object dynamic {
       override def toString = s"${from}_$to"
     }
 
+    def isIncluded(t1: TimeSlice, t2: TimeSlice) = t1.from >= t2.from && t1.to <= t2.to
+    def overlap(t1: TimeSlice, t2: TimeSlice) = {
+      if ((t1.to <= t2.from) ||  (t2.to <= t1.from)) 0 // disjoint time slices
+      else if(isIncluded(t1, t2)) t1.length
+      else if(isIncluded(t2, t1)) t2.length
+      else if(t1.from < t2.from && t1.to > t2.from) t1.to - t2.from
+      else if(t1.to > t2.to && t1.from < t2.to) t2.to - t1.from
+      else throw new RuntimeException("overlap does'nt take into account all configurations")
+    }
+
+    def extract(t1: TimeSlice)(t2: TimeSlice) =
+      if ((t1.to <= t2.from) ||  (t2.to <= t1.from)) Array[TimeSlice]() // disjoint time slices
+      else if(isIncluded(t1, t2)) Array(t1)
+      else if(isIncluded(t2, t1)) Array(t2)
+      else if(t1.from < t2.from && t1.to > t2.from) Array(TimeSlice(t2.from, t1.to))
+      else if(t1.to > t2.to && t1.from < t2.to) Array(TimeSlice(t1.from, t2.to))
+      else throw new RuntimeException("split does'nt take into account all configurations")
+
+    def split(t: TimeSlice, timeSlices: Vector[TimeSlice]) = timeSlices.toArray.flatMap(extract(t))
+
     object Move {
       def location = Move.locationIndex composeIso Location.indexIso
       def apply(location: Location, ratio: Float) = new Move(Location.toIndex(location), ratio)
@@ -172,7 +192,9 @@ object dynamic {
       val db = DBMaker.fileDB(file)
         .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
         .fileMmapPreclearDisable()   // Make mmap file faster
-        .cleanerHackEnable().make
+        .cleanerHackEnable()
+        .fileLockDisable() // Do not lock file (pb since db not closed)
+        .make
 
       db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
     }

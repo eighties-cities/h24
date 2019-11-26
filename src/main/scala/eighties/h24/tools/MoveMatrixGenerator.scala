@@ -28,7 +28,7 @@ object MoveMatrixGenerator extends App {
       opt[File]('e', "egt")
         .required()
         .action((x, c) => c.copy(egt = Some(x)))
-        .text("EGT file compressed with lzma"),
+        .text("presence file compressed with lzma"),
       opt[File]('p', "population")
         .required()
         .action((x, c) => c.copy(population = Some(x)))

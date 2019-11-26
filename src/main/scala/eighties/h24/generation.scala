@@ -18,7 +18,7 @@ import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream
 import org.geotools.data.shapefile.ShapefileDataStore
 import org.geotools.geometry.jts.{JTS, JTSFactoryFinder}
 import org.geotools.referencing.CRS
-import org.joda.time.{DateTime, DateTimeFieldType, Interval}
+import org.joda.time.{DateTime, DateTimeFieldType}
 import org.locationtech.jts.geom.{Coordinate, Envelope, GeometryCollection, GeometryFactory, MultiPolygon, Point, Polygon}
 import org.locationtech.jts.index.strtree.STRtree
 import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
@@ -641,41 +641,45 @@ object  generation {
     }
   }
 
-  case class Flow(/*id:String, */timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
+  case class Flow(timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
 
-  def readFlowsFromEGT(aFile: File, location: Coordinate=>space.Location) =
+  def readFlowsFromEGT(aFile: File, location: Coordinate=>space.Location, slices: Vector[TimeSlice]) =
     withCSVReader(aFile)(SemicolonFormat){ reader =>
     Try {
+      def startTime(line: Map[String, String]) = line("HEURE_DEB").trim
+      def endTime(line: Map[String, String]) = line("HEURE_FIN").trim
+      def motif(line: Map[String, String]) = line("MOTIF").trim
+      def pX(line: Map[String, String]) = line("ZF_X").trim
+      def pY(line: Map[String, String]) = line("ZF_Y").trim
+      def pXres(line: Map[String, String]) = line("RES_ZF_X").trim
+      def pYres(line: Map[String, String]) = line("RES_ZF_Y").trim
+      def getSex(line: Map[String, String]) = line("SEX").trim
+      def getAge(line: Map[String, String]) = line("AGE").toInt
+      def getEduc(line: Map[String, String]) = line("KEDUC").toInt
       reader.allWithHeaders().filter { line =>
-        val d1 = line("heure_deb").trim
-        val d2 = line("heure_fin").trim
-        val motif = line("motif_presence").trim
-        val px = line("POINT_X").trim
-        val py = line("POINT_Y").trim
-        val resx = line("POINT_X_RES").trim
-        val resy = line("POINT_Y_RES").trim
-        !(motif.isEmpty || motif.equalsIgnoreCase("88") || motif.equalsIgnoreCase("99") ||
+        val (d1, d2, mot, px, py, resx, resy) = (startTime(line), endTime(line), motif(line), pX(line), pY(line), pXres(line), pYres(line))
+        !(mot.isEmpty || mot.equalsIgnoreCase("8") || mot.equalsIgnoreCase("9") ||
           px.equalsIgnoreCase("NA") || py.equalsIgnoreCase("NA") ||
           resx.equalsIgnoreCase("NA") || resy.equalsIgnoreCase("NA") ||
           d1.equalsIgnoreCase("NA") || d2.equalsIgnoreCase("NA"))
       }.flatMap { line =>
         def format(date:String) = {
-          val formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm")
+          val formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
           Try{new DateTime(formatter.parse(date))} match {
             case Success(d) => d.toInstant
-            case Failure(_) => new DateTime(new SimpleDateFormat("dd/MM/yyyy").parse(date)).toInstant
+            case Failure(_) => new DateTime(new SimpleDateFormat("dd-MM-yyyy").parse(date)).toInstant
           }
         }
         //val formatter = new SimpleDateFormat("dd/MM/yy hh:mm")
-        val date_start = format(line("heure_deb").trim)
-        val date_end = format(line("heure_fin").trim)
-        val midnight = format("02/01/2010 00:00")
-        val sex = line("sexe").toInt match {
+        val date_start = format(startTime(line))
+        val date_end = format(endTime(line))
+//        val midnight = format("02/01/2010 00:00")
+        val sex = getSex(line).toInt match {
           case 1 => Sex.Male
           case 2 => Sex.Female
         }
-        val age = Age.parse(line("age").toInt)
-        val dipl = Try{line("dipl").toInt match {
+        val age = Age.parse(getAge(line))
+        val dipl = Try{getEduc(line) match {
           case 0 => Education.Dipl0
           case 1 => Education.Schol
           case 2 => Education.BEPC
@@ -690,16 +694,20 @@ object  generation {
           case Success(e)=>e
           case Failure(_) => Education.Dipl0
         }
-        val point_x = line("POINT_X").trim.replaceAll(",",".").toDouble
-        val point_y = line("POINT_Y").trim.replaceAll(",",".").toDouble
-        val res_x = line("POINT_X_RES").trim.replaceAll(",",".").toDouble
-        val res_y = line("POINT_Y_RES").trim.replaceAll(",",".").toDouble
+        val point_x = pX(line).replaceAll(",",".").toDouble
+        val point_y = pY(line).trim.replaceAll(",",".").toDouble
+        val res_x = pXres(line).trim.replaceAll(",",".").toDouble
+        val res_y = pYres(line).trim.replaceAll(",",".").toDouble
 
+        val minutesStart = date_start.get(DateTimeFieldType.minuteOfDay())
+        val minutesEnd = date_end.get(DateTimeFieldType.minuteOfDay())
         val timeSlices =
-          if(date_start.isBefore(midnight) && date_end.isAfter(midnight)) Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), 24 * 60), TimeSlice(0, date_end.get(DateTimeFieldType.minuteOfDay())))
-          else Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), date_end.get(DateTimeFieldType.minuteOfDay())))
+          (if (minutesEnd < minutesStart) Array(TimeSlice(minutesStart, 24 * 60), TimeSlice(0, minutesEnd))
+          else Array(TimeSlice(minutesStart, minutesEnd))).flatMap(t=> MoveMatrix.split(t, slices))
+//          if(date_start.isBefore(midnight) && date_end.isAfter(midnight)) Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), 24 * 60), TimeSlice(0, date_end.get(DateTimeFieldType.minuteOfDay())))
+//          else Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), date_end.get(DateTimeFieldType.minuteOfDay())))
 
-        timeSlices.map(s => Flow(/*line("ID_pers"), */s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
+        timeSlices.map(s => Flow(s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
       }.filter(_.age.from >= 15)
     }
   }
@@ -801,23 +809,10 @@ object  generation {
   lazy val dayTimeSlice = timeSlices(1)
   lazy val eveningTimeSlice = timeSlices(2)
 
-  def overlap(t1: TimeSlice, t2: TimeSlice) = {
-    def isIncluded(t1: TimeSlice, t2: TimeSlice) =
-      t1.from >= t2.from && t1.to <= t2.to
-
-    if(t1.to <= t2.from) 0
-    else if(t2.to <= t1.from) 0
-    else if(isIncluded(t1, t2)) t1.length
-    else if(isIncluded(t2, t1)) t2.length
-    else if(t1.from < t2.from && t1.to > t2.from) t1.to - t2.from
-    else if(t1.to > t2.to && t1.from < t2.to) t2.to - t1.from
-    else throw new RuntimeException("overlap does'nt take into account all configurations")
-  }
-
-  def interval(timeSlice: MoveMatrix.TimeSlice) = {
-    //val initialDate = new DateTime(2010, 1, 1, 0)
-    new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
-  }
+//  def interval(timeSlice: MoveMatrix.TimeSlice) = {
+//    //val initialDate = new DateTime(2010, 1, 1, 0)
+//    new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
+//  }
 
   def flowsFromEGT(originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
     val l2eCRS = CRS.decode("EPSG:27572")
@@ -859,7 +854,7 @@ object  generation {
       }.toMap
 
 
-    readFlowsFromEGT(aFile, location).map { l =>
+    readFlowsFromEGT(aFile, location, slices).map { l =>
       val nm = noMove(slices, boundingBox.sideI, boundingBox.sideJ)
       for {
         slice <- nm
