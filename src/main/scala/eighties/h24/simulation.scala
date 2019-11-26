@@ -97,4 +97,65 @@ object simulation {
 
     simulateAllDays(0, populationWithMoves)
   }
+  def simulateWithVisitor[I: ClassTag](
+                             days: Int,
+                             population: java.io.File,
+                             moves: java.io.File,
+                             moveType: MoveType,
+                             buildIndividual: (IndividualFeature, Random) => I,
+                             exchange: (World[I], Int, Int, Random) => World[I],
+                             stableDestinations: Lens[I, Map[TimeSlice, Location]],
+                             location: Lens[I, Location],
+                             home: Lens[I, Location],
+                             socialCategory: I => AggregatedSocialCategory,
+                             visit: (World[I], BoundingBox, Option[(Int, Int)]) => Unit,
+                             rng: Random) = {
+
+    def worldFeature = WorldFeature.load(population)
+    val bbox = worldFeature.originalBoundingBox
+
+    val moveMatrix = MoveMatrix.load(moves)
+    def locatedCell: LocatedCell = (timeSlice: TimeSlice, i: Int, j: Int) => moveMatrix.get((i, j), timeSlice)
+
+    @tailrec def simulateOneDay(world: space.World[I], bb: BoundingBox, timeSlices: List[TimeSlice], locatedCell: LocatedCell, day: Int, slice: Int = 0): World[I] = {
+      timeSlices match {
+        case Nil => world
+        case time :: t =>
+          def moved = moveType match {
+            case MoveType.Data => dynamic.moveInMoveMatrix(world, locatedCell, time, stableDestinations.get, location, home.get, socialCategory, rng)
+            case MoveType.Random => dynamic.randomMove(world, time, 1.0, location, stableDestinations.get, rng)
+            case MoveType.No => world
+          }
+
+          val convicted = exchange(moved, day, slice, rng)
+          visit(convicted, bb, Some((day, slice)))
+          simulateOneDay(convicted, bb, t, locatedCell, day, slice + 1)
+      }
+    }
+
+    @tailrec def simulateAllDays(day: Int, world: World[I]): World[I] =
+      if(day == days) world
+      else {
+        val newWorld = simulateOneDay(world, bbox, timeSlices.toList, locatedCell, day)
+        simulateAllDays(day + 1, newWorld)
+      }
+
+    def world = generateWorld(worldFeature.individualFeatures, buildIndividual, location, home, rng)
+
+    val populationWithMoves =
+      moveType match {
+        case MoveType.Data =>
+          val fixedDay =  assignRandomDayLocation(world, locatedCell, stableDestinations, location.get, home.get, socialCategory, rng)
+          assignFixNightLocation(
+            fixedDay,
+            stableDestinations,
+            home.get
+          )
+        case MoveType.Random => assignFixNightLocation(world, stableDestinations, home.get)
+        case MoveType.No => assignFixNightLocation(world, stableDestinations, home.get)
+      }
+
+    visit(populationWithMoves, bbox, None)
+    simulateAllDays(0, populationWithMoves)
+  }
 }
