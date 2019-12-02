@@ -70,11 +70,11 @@ Get database from Origin-Destination survey. Following tables are necessary: tri
 
 You have to standardize trip database and people database issued from origin-destination surveys with Rscritps located in src/main/R
 
-For Loire-Atlantique, let's use EDGT 2015 (open data available here https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/) and run the standardize_OD_NantesRegion.R script
+- For Loire-Atlantique, let's use EDGT 2015 (open data available here https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/) and run the standardize_OD_NantesRegion.R script
 
-For the entire Île-de-France région, use EGT 2010 (if you have access to data) and run the standardize_OD_ParisRegion.R script
+- For the entire Île-de-France région, use EGT 2010 (if you have access to data) and run the standardize_OD_ParisRegion.R script
 
-You should get two tables: H24_trip.csv & H24_ind.csv
+Whatever the region, you should get two tables: H24_trip.csv & H24_ind.csv
 
 ### Step 2. Aggregate OD data
 Secondly, run the generate_location.R script (located in src/main/R) 
@@ -105,9 +105,6 @@ You can also directly download resulting location tables (in InputODData folder)
 - for Loire-Atlantique (EDGT 2015):  H24_location_NantesRegion_noID.csv
 
 ## Generate a move matrix
-
-For Loire-Atlantique (note we added a JVM option to give more memory to the process):
-xxxx
 
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
