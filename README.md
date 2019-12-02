@@ -63,24 +63,48 @@ For Île-de-France (note we added a JVM option to give more memory to the proces
 sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationShapefileExporter -p results_IDF/population.bin -o results_IDF/population.shp"
 ```
 
-## Generate a move matrix
-
-### Create hourly location table (from Origin-Destination surveys)
+## Create hourly location table (from Origin-Destination surveys)
 Get database from Origin-Destination survey. Following tables are necessary: trip database, people database, GIS database
 
-•	First, you have to standardize trip database and people database issued from origin-destination surveys carried out…
+### First, you have to standardize trip database and people database issued from origin-destination surveys with Rscritps located in src/main/R
 
-o	in the Paris region (EGT 2010) : Run the standardize_OD_ParisRegion.R script
+For Loire-Atlantique, let's use EDGT 2015 (open data available here https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/) and run the standardize_OD_NantesRegion.R script
 
-o	in the Montpellier region (EDGT 2014) : Run the standardize_OD_MontpellierRegion.R script
-Using open data: http://data.montpellier3m.fr/dataset/enquete-menages-deplacements
+For the entire Île-de-France région, use EGT 2010 (if you have access to data) and run the standardize_OD_ParisRegion.R script
 
-o	in the Nantes region (EDGT 2015) : Run the standardize_OD_NantesRegion.R script
-Using open data: https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/
+You should get two tables: H24_trip.csv & H24_ind.csv
 
+### Secondly, run the generate_location.R script (located in src/main/R) to generate hourly location table
+You should get location table (H24_location.csv) with location of every respondent around the clock
 
-For every city region, you should get two tables: H24_trip.csv & H24_ind.csv
+Location attributes
+ZF_X & ZF_Y	coordinates: X Y – centroids of the area – projection L93
+CODE_ZF	: ID of the area
+HEURE_DEB &  HEURE_FIN: start & end time (hh:mn)
+DUREE: duration (in minutes)
+MOTIF:	home (1) ; work (2) ; study (3) ; shopping (4) ; leasure (5) ; others (6)
+		
+Respondent attributes
+RES_ZF_X &  RES_ZF_Y: coordinates X Y – centroids of the residential area – projection L93
+RES_ZF_CODE	: ID of the residential area
+SEX: Male (1); Female (2)
+AGE: Age (in years)
+KAGE: Age in groups. 5-15 yrs (0); 16-29 yrs (1); 30-59 yrs (2); 60 yrs. and more (3)
+KEDUC: Educational level	in groups. Low (sans diplôme - BEPC; CEP; BEP/CAP) (1) ; Middle (Bac-Bac+2) (2) ; Up (>Bac+2) (3)
 
+Notes
+-	Our dataset is restricted to weekday trips. We considered weekday trips as occurring an “average working day” (Monday to Friday)
+-	We kept trips occurring between 4:00 am (day before survey) and 3:59 am (day of survey) and removed trips outside this window.
+-	Individuals who reported staying at home all day were assigned to their place of residence over the entire observation period.
+
+You can also directly download resulting location tables (in InputData folder)
+-	for Île-de-France (EGT 2010): H24_location_ParisRegion_noID.csv
+-	for Loire-Atlantique (EDGT 2015):  H24_location_NantesRegion_noID.csv
+
+## Generate a move matrix
+
+For Loire-Atlantique (note we added a JVM option to give more memory to the process):
+xxxx
 
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
