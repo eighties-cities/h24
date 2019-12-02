@@ -65,6 +65,23 @@ sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationShapefileExporter -p results_
 
 ## Generate a move matrix
 
+### Create hourly location table (from Origin-Destination surveys)
+Get database from Origin-Destination survey. Following tables are necessary: trip database, people database, GIS database
+
+•	First, you have to standardize trip database and people database issued from origin-destination surveys carried out…
+
+o	in the Paris region (EGT 2010) : Run the standardize_OD_ParisRegion.R script
+
+o	in the Montpellier region (EDGT 2014) : Run the standardize_OD_MontpellierRegion.R script
+Using open data: http://data.montpellier3m.fr/dataset/enquete-menages-deplacements
+
+o	in the Nantes region (EDGT 2015) : Run the standardize_OD_NantesRegion.R script
+Using open data: https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/
+
+
+For every city region, you should get two tables: H24_trip.csv & H24_ind.csv
+
+
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
 sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID_ParisRegion.csv.lzma -p results_IDF/population.bin -m results_IDF/moves.bin"
