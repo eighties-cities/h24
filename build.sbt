@@ -71,7 +71,7 @@ libraryDependencies ++= {
   }
 }
 
-enablePlugins(SbtOsgi)
+/*enablePlugins(SbtOsgi)
 
 //updateOptions := updateOptions.value.withGigahorse(false)
 
@@ -95,5 +95,8 @@ OsgiKeys.additionalHeaders :=  Map(
 )
 
 OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> (f.getName startsWith "gt-"))
+
+*/
+
 // do not use coursier at the moment: it fails on jai_core for some reason
 useCoursier := false
