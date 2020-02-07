@@ -51,11 +51,6 @@ object PopulationGenerator extends App {
     )
   }
 
-//  val inputDirectory = File("data") / "44"
-//  val contourIRISFile = inputDirectory / "CONTOURS-IRIS.shp"
-//  val baseICEvolStructPopFileName = inputDirectory / "base-ic-evol-struct-pop-2012.csv.lzma"
-//  val baseICDiplomesFormationPopFileName = inputDirectory / "base-ic-diplomes-formation-2012.csv.lzma"
-//  val cellFile = inputDirectory /"R_rfl09_LAEA1000.shp"
   OParser.parse(parser, args, Config()) match {
     case Some(config) =>
       val contourIRISFile = config.contour.get.toScala
@@ -79,25 +74,6 @@ object PopulationGenerator extends App {
         (f.map(IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))), originalBoundingBox)
       }
 
-//      val features = generateFeatures(
-//        _ => true,
-//        shpData,
-//        popData,
-//        eduData,
-//        sexData,
-//        cellsData,
-//        new util.Random(42),
-//        if (config.randomPop.get) generatePopulationRandomly else generatePopulation
-//      ).get.toArray
-//
-//      log("Relocating population")
-//
-//      val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
-//
-//      def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))
-//
-//      val relocatedFeatures = features.map(relocate)
-
       val (relocatedFeatures, originalBoudingBox) = relocateFeatures(generateFeatures(
         _ => true,
         shpData,
@@ -116,12 +92,6 @@ object PopulationGenerator extends App {
       def createWorldFeature(f: Array[IndividualFeature], obb: BoundingBox) = {
         WorldFeature(f, obb, BoundingBox(f, IndividualFeature.location.get), gridSize)
       }
-//      val boundingBox = BoundingBox(relocatedFeatures, IndividualFeature.location.get)
-
-//      WorldFeature.save(
-//        WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
-//        config.output.get
-//      )
       WorldFeature.save(
         createWorldFeature(relocatedFeatures, originalBoudingBox),
         config.output.get

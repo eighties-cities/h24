@@ -81,7 +81,6 @@ object  generation {
   case class Equipment(typeEquipment: String, point: Point, location:space.Coordinate, quality: String, iris: AreaID)
   case class Activity(point: Point, location: space.Coordinate)
   case class Regex (pos:Integer, regex : String => String)
-  //name:String,
   case class Slice(from:Integer,to:Integer)
   case class ShapeData(file:File, spatialId : String, regexs:Option[Seq[Regex]] = None )
 
@@ -209,7 +208,6 @@ object  generation {
     }
   }
 
-
   def readMobilityFlows(file: File)(commune: AreaID) = withCSVReader(file)(SemicolonFormat) { reader =>
     Try {
       reader.iterator.drop(1).filter{ l => l.head == commune.id }.map { line =>
@@ -282,20 +280,17 @@ object  generation {
     val outCRS = CRS.decode("EPSG:27572")
     val transform = CRS.findMathTransform(inCRS, outCRS, true)
 
+    // the zipWithIndex is only useful for debug so we might want to remove it at some point...
     irises.zipWithIndex.map { case (id: AreaID, index: Int) =>
-      if ((index % 1000) == 0) println(index)
+      if ((index % 1000) == 0) Log.log(s"$index")
+      // we use getOrElse to handle the absence of an IRIS in the INSEE database
       val ageSexV = ageSex.getOrElse(id, Vector())
       val schoolAgeV = schoolAge.getOrElse(id, Vector())
       val educationSexV = educationSex.getOrElse(id, Vector())
-
-      //val sampler = new PolygonSampler(geometry(id).get)
-
       val total = ageSexV.sum
-
       // make sure all relevant distributions exist
       if (total > 0 && ageSexV.nonEmpty && schoolAgeV.nonEmpty && educationSexV(0).nonEmpty && educationSexV(1).nonEmpty) {
         val ageSexSizes = Seq(6, 2)
-//        println(s"iris $id ($total) = $ageSexV == $educationSexV")
         val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
 
         val educationSexSizes = Seq(7)
@@ -314,8 +309,8 @@ object  generation {
         }.toArray.filter { case (_, v) => v > 0 }
 
         if (relevantCellsArea.isEmpty) {
-//          relevantCells.foreach(g=>println(g._1))
-//          throw new RuntimeException(s"NoOOOOOOooooOOO cell intersecting iris $transformedIris")
+          // FIXME there is no cell with a positive (sic!) population for this IRIS.
+          //  We could add a configuration parameter to decide to use all cells anyway...
           IndexedSeq()
         } else (0 until total.toInt).map { _ =>
           val sample = ageSexVariate.compute(rnd)
@@ -341,16 +336,8 @@ object  generation {
             if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
             else 1
           }
-          //val coordinate = sampler.apply(rnd)
-          //val transformed = JTS.transform(coordinate, null, transform)
-          //val point = JTS.toGeometry(JTS.toDirectPosition(transformed, outCRS))
           val cell = multinomial(relevantCellsArea)(rnd)
-          IndividualFeature(
-            ageCategory = ageIndex,
-            sex = sex,
-            education = education,
-            location = cell
-          )
+          IndividualFeature(ageCategory = ageIndex, sex = sex, education = education, location = cell)
         }.filter(_.ageCategory > 0) //remove people with age in 0-14
       } else IndexedSeq()
     }

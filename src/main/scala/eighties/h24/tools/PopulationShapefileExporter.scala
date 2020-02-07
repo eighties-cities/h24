@@ -51,7 +51,7 @@ object PopulationShapefileExporter extends App {
       val bbox = res.originalBoundingBox
       val gridSize = res.gridSize
       for {
-        (feature, i) <- res.individualFeatures.zipWithIndex
+        feature <- res.individualFeatures
       } {
         import feature._
         val point = geometryFactory.createPoint(new Coordinate(bbox.minI + location._1.toDouble*gridSize + gridSize/2, bbox.minJ + location._2.toDouble*gridSize + gridSize/2))

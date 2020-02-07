@@ -35,6 +35,7 @@ libraryDependencies ++= Seq (
   "org.geotools" % "gt-image" % geotoolsVersion,
   "org.geotools" % "gt-coverage" % geotoolsVersion,
   "org.geotools" % "gt-geojson" % geotoolsVersion,
+  "org.geotools" % "gt-geopkg" % geotoolsVersion,
   "com.github.tototoshi" %% "scala-csv" % "1.3.5",
   "org.apache.commons" % "commons-compress" % "1.19",
   "org.apache.commons" % "commons-math3" % "3.6.1",
