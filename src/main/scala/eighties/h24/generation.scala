@@ -575,7 +575,7 @@ object  generation {
       import collection.Searching._
 
       val x = rng.nextDouble()
-      var offset = search(m_cdf).search(x).insertionPoint - 1
+      var offset = m_cdf.search(x).insertionPoint - 1
       val output = Array.ofDim[Double](N)
       for (i <- 0 until N) {
         val ix = offset % m_size(i)

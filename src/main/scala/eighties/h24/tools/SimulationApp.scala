@@ -55,11 +55,12 @@ object SimulationApp extends App {
     def socialCategoryV = Individual.socialCategory composeIso AggregatedSocialCategory.shortAggregatedSocialCategoryIso
 
     def arrayToMapOfStableLocation(array: Array[Short]) =
-      (timeSlices zip array).filter(_._2 != Location.noLocationIndex).toMap.mapValues(Location.fromIndex)
+      (timeSlices zip array).filter(_._2 != Location.noLocationIndex).map{ case (a, b) => a -> Location.fromIndex(b) }.toMap
 
     def mapOfStableLocationToArray(map: Map[TimeSlice, Location]) = timeSlices.map(t => map.get(t).map(Location.toIndex).getOrElse(Location.noLocationIndex)).toArray
 
-    def timeSlicesMapIso = monocle.Iso[Array[Short], Map[TimeSlice, Location]] (arrayToMapOfStableLocation) (mapOfStableLocationToArray)
+    def timeSlicesMapIso =
+      monocle.Iso[Array[Short], Map[TimeSlice, Location]] (arrayToMapOfStableLocation) (mapOfStableLocationToArray)
 
     def stableDestinationsV = Individual.stableDestinations composeIso timeSlicesMapIso
 

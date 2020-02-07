@@ -4,13 +4,13 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.1"
 
-val monocleVersion = "1.5.0"
+val monocleVersion = "2.0.1"
 
 val geotoolsVersion = "22.0"
 
-val breezeVersion = "0.13.2"
+//val breezeVersion = "1.0"
 
 resolvers ++= Seq(
   "osgeo" at "https://download.osgeo.org/webdav/geotools/",
@@ -21,8 +21,7 @@ resolvers ++= Seq(
 
 
 libraryDependencies ++= Seq (
-  "org.mapdb" % "mapdb" % "3.0.7",
-  "io.swaydb" %% "swaydb" % "0.10.8",
+  "org.mapdb" % "mapdb" % "3.0.8",
   "com.github.scopt" %% "scopt" % "4.0.0-RC2",
   "com.github.julien-truffaut"  %%  "monocle-core"    % monocleVersion,
   "com.github.julien-truffaut"  %%  "monocle-generic" % monocleVersion,
@@ -36,27 +35,31 @@ libraryDependencies ++= Seq (
   "org.geotools" % "gt-coverage" % geotoolsVersion,
   "org.geotools" % "gt-geojson" % geotoolsVersion,
   "org.geotools" % "gt-geopkg" % geotoolsVersion,
-  "com.github.tototoshi" %% "scala-csv" % "1.3.5",
+  "com.github.tototoshi" %% "scala-csv" % "1.3.6",
   "org.apache.commons" % "commons-compress" % "1.19",
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "org.tukaani" % "xz" % "1.6",
-  "com.github.pathikrit" %% "better-files" % "2.17.1",
-  "org.scalanlp" %% "breeze" % breezeVersion,
-  "org.scalanlp" %% "breeze-natives" % breezeVersion,
-  "org.typelevel"  %% "squants"  % "1.1.0",
+  "com.github.pathikrit" %% "better-files" % "3.8.0",
+  "org.scalaz" %% "scalaz-core" % "7.2.30",
+  //"org.scalanlp" %% "breeze" % breezeVersion,
+  //"org.scalanlp" %% "breeze-natives" % breezeVersion,
+  "org.typelevel"  %% "squants"  % "1.6.0",
   "joda-time" % "joda-time" % "2.9.7",
-  "io.suzaku" %% "boopickle" % "1.2.6",
-  "javax.media" % "jai_core" % "1.1.3" from ("http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar", allowInsecureProtocol = true),
-  "javax.media" % "jai_codec" % "1.1.3",
-  "javax.media" % "jai_imageio" % "1.1",
-  "org.apache.poi" % "poi-ooxml"  % "4.1.1"
+  "io.suzaku" %% "boopickle" % "1.3.1",
+  //"javax.media" % "jai_core" % "1.1.3" from ("http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar", allowInsecureProtocol = true),
+  //"javax.media" % "jai_codec" % "1.1.3",
+  //"javax.media" % "jai_imageio" % "1.1",
+  "org.apache.poi" % "poi-ooxml"  % "4.1.1",
+  //"org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
 )
  
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+//addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+scalacOptions ++= Seq("-Ymacro-annotations")
 
 enablePlugins(SbtOsgi)
 
-updateOptions := updateOptions.value.withGigahorse(false)
+//updateOptions := updateOptions.value.withGigahorse(false)
 
 osgiSettings
 
