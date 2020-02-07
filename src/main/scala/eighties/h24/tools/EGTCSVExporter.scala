@@ -140,7 +140,7 @@ object EGTCSVExporter extends App {
         }
         def matches(a: AggregatedSocialCategory) = matchesSex(a) && matchesAge(a) && matchesEdu(a)
         map.groupBy(_._1._1).
-          mapValues(_.flatMap(_._2).filter(x=>matches(x._1)).flatMap(_._2)).
+          view.mapValues(_.flatMap(_._2).filter(x=>matches(x._1)).flatMap(_._2.toSeq)).
 //          map(x=>(x._1,x._2.flatMap(_._2).flatMap(_._2))).
           filter{case ((i: Int,j: Int), _)=>(i % 2 == 0)&&(j % 2 == 0)}.//keep only even origins
           foreach{case ((i: Int,j: Int), moves: Iterable[Move]) =>

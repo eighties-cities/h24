@@ -91,7 +91,12 @@ object EGTShapefileExporter extends App {
 
         def allMoves = moveTimeLapse.values().iterator().asInstanceOf[java.util.Iterator[Cell]].asScala.flatMap(_.values.flatten)
 
-        def allCellsWithMoves = moveTimeLapse.keySet().iterator().asInstanceOf[java.util.Iterator[((Int,Int), TimeSlice)]].asScala.filter(x=>moveTimeLapse.get(x).asInstanceOf[Cell].flatMap(_._2).nonEmpty).map(_._1)
+        def allCellsWithMoves =
+          moveTimeLapse.keySet().
+            iterator().
+            asInstanceOf[java.util.Iterator[((Int,Int), TimeSlice)]].asScala.
+            filter(x=>moveTimeLapse.get(x).asInstanceOf[Cell].
+              flatMap(_._2.toSeq).nonEmpty).map(_._1)
 
         def write(i: Int, j: Int): Unit = {
           val x = bb.minI + i * gridSize + gridSize / 2

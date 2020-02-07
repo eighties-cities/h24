@@ -62,7 +62,7 @@ object MoveMatrixGenerator extends App {
       for {
         (_, cm) <- matrix
         c <- cm.flatten
-        (_, ms) <- c
+        (_, ms) <- c.toSeq
         m <- ms
       } yield m
 

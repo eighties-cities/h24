@@ -4,7 +4,7 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.13.1"
 
 val monocleVersion = "2.0.1"
 
@@ -48,14 +48,17 @@ libraryDependencies ++= Seq (
   "javax.media" % "jai_core" % "1.1.3" from ("http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar", allowInsecureProtocol = true),
   "javax.media" % "jai_codec" % "1.1.3",
   "javax.media" % "jai_imageio" % "1.1",
-  "org.apache.poi" % "poi-ooxml"  % "4.1.1"
+  "org.apache.poi" % "poi-ooxml"  % "4.1.1",
+  //"org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
 )
  
-addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+//addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+scalacOptions ++= Seq("-Ymacro-annotations")
 
 enablePlugins(SbtOsgi)
 
-updateOptions := updateOptions.value.withGigahorse(false)
+//updateOptions := updateOptions.value.withGigahorse(false)
 
 osgiSettings
 
