@@ -16,6 +16,7 @@ resolvers ++= Seq(
   "osgeo" at "https://download.osgeo.org/webdav/geotools/",
   "geosolutions" at "https://maven.geo-solutions.it/",
   "geotoolkit" at "https://maven.geotoolkit.org/",
+  "Boundless" at "https://repo.boundlessgeo.com/main"
 )
 
 
@@ -44,7 +45,7 @@ libraryDependencies ++= Seq (
   "org.typelevel"  %% "squants"  % "1.1.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.2.6",
-  "javax.media" % "jai_core" % "1.1.3" from "https://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
+  "javax.media" % "jai_core" % "1.1.3" from ("http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar", allowInsecureProtocol = true),
   "javax.media" % "jai_codec" % "1.1.3",
   "javax.media" % "jai_imageio" % "1.1",
   "org.apache.poi" % "poi-ooxml"  % "4.1.1"
@@ -76,4 +77,5 @@ OsgiKeys.additionalHeaders :=  Map(
 )
 
 OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> (f.getName startsWith "gt-"))
-
+// do not use coursier at the moment: it fails on jai_core for some reason
+useCoursier := false

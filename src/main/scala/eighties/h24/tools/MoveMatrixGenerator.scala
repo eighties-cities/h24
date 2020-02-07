@@ -16,6 +16,7 @@ object MoveMatrixGenerator extends App {
 
   case class Config(
     egt: Option[File] = None,
+    inputSRID: Option[String] = None,
     population: Option[File] = None,
     moves: Option[File] = None)
 
@@ -28,6 +29,10 @@ object MoveMatrixGenerator extends App {
       opt[File]('e', "egt")
         .required()
         .action((x, c) => c.copy(egt = Some(x)))
+        .text("presence file compressed with lzma"),
+      opt[String]('s', "srid")
+        .required()
+        .action((x, c) => c.copy(inputSRID = Some(x)))
         .text("presence file compressed with lzma"),
       opt[File]('p', "population")
         .required()
@@ -86,7 +91,7 @@ object MoveMatrixGenerator extends App {
       val gridSize = population.gridSize
       Log.log("gridSize = " + gridSize)
 
-      val newMatrix = flowsFromEGT(obb, bb, gridSize, config.egt.get.toScala).get
+      val newMatrix = flowsFromEGT(obb, bb, gridSize, config.egt.get.toScala, config.inputSRID.getOrElse("EPSG:2154")).get
       config.moves.get.toScala.parent.createDirectories()
       config.moves.get.delete()
 

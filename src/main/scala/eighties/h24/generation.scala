@@ -814,11 +814,11 @@ object  generation {
 //    new Interval(new DateTime(2010, 1, 1, timeSlice.from, 0), new DateTime(2010, 1, 1, timeSlice.to, 0))
 //  }
 
-  def flowsFromEGT(originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int, aFile: File, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
-    val l2eCRS = CRS.decode("EPSG:27572")
+  def flowsFromEGT(originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int, aFile: File, inputSRID: String, slices: Vector[TimeSlice] = timeSlices): Try[MoveMatrix] = {
+    val inputCRS = CRS.decode(inputSRID)
     val outCRS = CRS.decode("EPSG:3035")
 
-    val transform = CRS.findMathTransform(l2eCRS, outCRS, true)
+    val transform = CRS.findMathTransform(inputCRS, outCRS, true)
     val geomFactory = new GeometryFactory
 
     def location(coord: Coordinate): space.Location = {

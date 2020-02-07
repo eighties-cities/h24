@@ -108,9 +108,12 @@ You can also directly download resulting location tables (in InputODData folder)
 
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
-sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID_ParisRegion.csv.lzma -p results_IDF/population.bin -m results_IDF/moves.bin"
+sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID_ParisRegion.csv.lzma -s EPSG:27572 -p results_IDF/population.bin -m results_IDF/moves.bin"
 ```
-
+For Loire-Atlantique (note we added a JVM option to give more memory to the process):
+```shell script
+sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_44/H24_location_noID_NantesRegion.csv.lzma -s EPSG:2154 -p results_44/population.bin -m results_44/moves.bin"
+```
 ### Optionally, check your matrix
 Generate the matrix destinations
 ```shell script
@@ -128,4 +131,16 @@ You can now see it if you open the index.html in you browser.
 You can also filter the flows using a timeslice, sex, age, education & a percentile:
 ```shell script
 sbt -J-Xmx4G "runMain eighties.h24.tools.EGTCSVExporter -p results_IDF/population.bin -m results_IDF/moves.bin -t 0 -a 1 -s 1 -e 1 -o flowmap/flows_0_1_1_1_0.5.csv"
+```
+
+### Run an "empty" Simulation
+You can now run a simple 'empty' simulation with the test app.
+For Île-de-France:
+```shell script
+sbt -J-Xmx2G "runMain eighties.h24.tools.SimulationApp -p results_IDF/population.bin -m results_IDF/moves.bin -d 1 -o maps_IDF"
+```
+
+For Loire-Atlantique:
+```shell script
+sbt -J-Xmx2G "runMain eighties.h24.tools.SimulationApp -p results_44/population.bin -m results_44/moves.bin -d 1 -o maps_44"
 ```
