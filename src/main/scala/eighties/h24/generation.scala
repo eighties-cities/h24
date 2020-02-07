@@ -282,10 +282,11 @@ object  generation {
     val outCRS = CRS.decode("EPSG:27572")
     val transform = CRS.findMathTransform(inCRS, outCRS, true)
 
-    irises.map { id =>
-      val ageSexV = ageSex(id)
-      val schoolAgeV = schoolAge(id)
-      val educationSexV = educationSex(id)
+    irises.zipWithIndex.map { case (id: AreaID, index: Int) =>
+      if ((index % 1000) == 0) println(index)
+      val ageSexV = ageSex.getOrElse(id, Vector())
+      val schoolAgeV = schoolAge.getOrElse(id, Vector())
+      val educationSexV = educationSex.getOrElse(id, Vector())
 
       //val sampler = new PolygonSampler(geometry(id).get)
 
@@ -312,8 +313,11 @@ object  generation {
           }
         }.toArray.filter { case (_, v) => v > 0 }
 
-        if (relevantCellsArea.isEmpty) throw new RuntimeException(s"NoOOOOOOooooOOO cell intersecting iris $transformedIris")
-        val res = (0 until total.toInt).map { _ =>
+        if (relevantCellsArea.isEmpty) {
+//          relevantCells.foreach(g=>println(g._1))
+//          throw new RuntimeException(s"NoOOOOOOooooOOO cell intersecting iris $transformedIris")
+          IndexedSeq()
+        } else (0 until total.toInt).map { _ =>
           val sample = ageSexVariate.compute(rnd)
           val ageIndex = (sample(0) * ageSexSizes.head).toInt
           val ageInterval = Age.all(ageIndex)
@@ -348,7 +352,6 @@ object  generation {
             location = cell
           )
         }.filter(_.ageCategory > 0) //remove people with age in 0-14
-        res
       } else IndexedSeq()
     }
   }

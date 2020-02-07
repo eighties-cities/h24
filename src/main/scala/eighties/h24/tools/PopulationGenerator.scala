@@ -72,7 +72,33 @@ object PopulationGenerator extends App {
       val cellsData = CellsData(cellFile, "x_laea", "y_laea", "ind")
 
       log("Generating population")
-      val features = generateFeatures(
+      val gridSize = config.gridSize.get
+      def relocateFeatures(f: Array[IndividualFeature]) = {
+        val originalBoundingBox = BoundingBox(f, IndividualFeature.location.get)
+        log("Relocating population")
+        (f.map(IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))), originalBoundingBox)
+      }
+
+//      val features = generateFeatures(
+//        _ => true,
+//        shpData,
+//        popData,
+//        eduData,
+//        sexData,
+//        cellsData,
+//        new util.Random(42),
+//        if (config.randomPop.get) generatePopulationRandomly else generatePopulation
+//      ).get.toArray
+//
+//      log("Relocating population")
+//
+//      val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
+//
+//      def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))
+//
+//      val relocatedFeatures = features.map(relocate)
+
+      val (relocatedFeatures, originalBoudingBox) = relocateFeatures(generateFeatures(
         _ => true,
         shpData,
         popData,
@@ -81,25 +107,23 @@ object PopulationGenerator extends App {
         cellsData,
         new util.Random(42),
         if (config.randomPop.get) generatePopulationRandomly else generatePopulation
-      ).get.toArray
-
-      log("Relocating population")
-
-      val gridSize = config.gridSize.get
-      val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
-
-      def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))
-
-      val relocatedFeatures = features.map(relocate)
+      ).get.toArray)
 
       log("Saving population")
-
-      val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
       // make sure the output directory structure exists
       config.output.get.getParentFile.mkdirs()
 
+      def createWorldFeature(f: Array[IndividualFeature], obb: BoundingBox) = {
+        WorldFeature(f, obb, BoundingBox(f, IndividualFeature.location.get), gridSize)
+      }
+//      val boundingBox = BoundingBox(relocatedFeatures, IndividualFeature.location.get)
+
+//      WorldFeature.save(
+//        WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
+//        config.output.get
+//      )
       WorldFeature.save(
-        WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
+        createWorldFeature(relocatedFeatures, originalBoudingBox),
         config.output.get
       )
     case _ =>
