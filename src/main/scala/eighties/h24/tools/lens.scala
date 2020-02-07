@@ -1,7 +1,8 @@
 package eighties.h24.tools
 
 import monocle.Iso
-import spire.ClassTag
+
+import scala.reflect.ClassTag
 
 /*
  * Copyright (C) 2019 Romain Reuillon

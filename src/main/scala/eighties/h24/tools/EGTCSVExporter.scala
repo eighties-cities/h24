@@ -18,8 +18,6 @@ package eighties.h24.tools
  */
 
 import java.io.File
-
-import breeze.stats.DescriptiveStats
 import com.github.tototoshi.csv.CSVWriter
 import eighties.h24.dynamic.MoveMatrix.Move
 import eighties.h24.dynamic._
@@ -148,7 +146,14 @@ object EGTCSVExporter extends App {
           foreach{case ((i: Int,j: Int), moves: Iterable[Move]) =>
             val originSeq = Seq(s"origin_${i}_$j")++toLatLon(i,j) //++Seq(timeSlice.toString)
 //          cell.foreach{case (category:AggregatedSocialCategory, moves: Array[Move]) => {
-            val ratioLimit = if (moves.nonEmpty && percentile.isDefined) DescriptiveStats.percentile(moves.map(_.ratio.toDouble), percentile.get) else 0.0
+
+            def percentileCompute(s: Iterable[Double], p: Double) = {
+              val sorted = s.toSeq.sorted
+              val k = scala.math.ceil((sorted.length - 1) * (p / 100.0)).toInt
+              sorted(k)
+            }
+
+            val ratioLimit = if (moves.nonEmpty && percentile.isDefined) percentileCompute(moves.map(_.ratio.toDouble), percentile.get) else 0.0
             moves.
               filter{m => val (di, dj) = Location.fromIndex(m.locationIndex); (di != i) || (dj != j)}.//filters move to the same location
 //              map{mm => println(mm.ratio);mm}.
