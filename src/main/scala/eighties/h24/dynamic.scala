@@ -189,14 +189,21 @@ object dynamic {
 
     def load(file: java.io.File) = {
       import org.mapdb._
-      val db = DBMaker.fileDB(file)
-        .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
-        .fileMmapPreclearDisable()   // Make mmap file faster
-        .cleanerHackEnable()
-        .fileLockDisable() // Do not lock file (pb since db not closed)
-        .make
 
-      db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
+      val thread = Thread.currentThread()
+      val cl = thread.getContextClassLoader
+
+      thread.setContextClassLoader(TimeSlice.getClass.getClassLoader)
+      try {
+        val db = DBMaker.fileDB(file)
+          .fileMmapEnableIfSupported() // Only enable mmap on supported platforms
+          .fileMmapPreclearDisable() // Make mmap file faster
+          .cleanerHackEnable()
+          .fileLockDisable() // Do not lock file (pb since db not closed)
+          .make
+
+        db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
+      } finally thread.setContextClassLoader(cl)
     }
 
 //      val os = new FileOutputStream((file / timeSlicesFileName).toJava)

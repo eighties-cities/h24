@@ -6,6 +6,8 @@ version := "1.0-SNAPSHOT"
 
 scalaVersion := "2.13.1"
 
+crossScalaVersions := Seq("2.12.10", "2.13.1")
+
 val monocleVersion = "2.0.1"
 
 val geotoolsVersion = "22.0"
@@ -55,9 +57,22 @@ libraryDependencies ++= Seq (
  
 //addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 
-scalacOptions ++= Seq("-Ymacro-annotations")
 
-enablePlugins(SbtOsgi)
+scalacOptions ++= {
+  scalaBinaryVersion.value match {
+    case x if x.startsWith("2.12") => Seq("-target:jvm-1.8")
+    case _ => Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
+  }
+}
+
+libraryDependencies ++= {
+  scalaBinaryVersion.value match {
+    case x if x.startsWith("2.12") => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+    case _ => Seq()
+  }
+}
+
+/*enablePlugins(SbtOsgi)
 
 //updateOptions := updateOptions.value.withGigahorse(false)
 
@@ -81,5 +96,8 @@ OsgiKeys.additionalHeaders :=  Map(
 )
 
 OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> (f.getName startsWith "gt-"))
+
+*/
+
 // do not use coursier at the moment: it fails on jai_core for some reason
 useCoursier := false

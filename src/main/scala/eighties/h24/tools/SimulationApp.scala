@@ -23,9 +23,9 @@ import scala.util.Random
 object SimulationApp extends App {
   object Individual {
     def apply(
-               feature: IndividualFeature,
-               random: Random,
-               stableDestinations: Map[TimeSlice, Location] = Map.empty): Individual = {
+      feature: IndividualFeature,
+      random: Random,
+      stableDestinations: Map[TimeSlice, Location] = Map.empty): Individual = {
       val socialCategory = AggregatedSocialCategory(feature)
 
       Individual(
@@ -37,11 +37,10 @@ object SimulationApp extends App {
     }
 
     def apply(
-               socialCategory: AggregatedSocialCategory,
-               home: Location,
-               location: Location,
-               stableDestinations: Map[TimeSlice, Location]
-             ): Individual =
+      socialCategory: AggregatedSocialCategory,
+      home: Location,
+      location: Location,
+      stableDestinations: Map[TimeSlice, Location]): Individual =
       new Individual(
         AggregatedSocialCategory.shortAggregatedSocialCategoryIso(socialCategory),
         Location.toIndex(home),
@@ -72,28 +71,29 @@ object SimulationApp extends App {
   }
 
   @Lenses case class Individual(
-                                 socialCategory: Byte,
-                                 home: Short,
-                                 location: Short,
-                                 stableDestinations: Array[Short])
+    socialCategory: Byte,
+    home: Short,
+    location: Short,
+    stableDestinations: Array[Short])
 
   def filter(n:Int) = n>=30
   val format = new GeoTiffFormat()
-  def mapColorHSV(world: World[Individual],
-                  originalBoundingBox: BoundingBox,
-                  width: Int,
-                  height: Int,
-                  file: File,
-                  getValue: Individual => Double,
-                  atHome: Boolean = true,
-                  textLeft: String= "",
-                  textRight: String= "",
-                  filter: Int => Boolean = _=>true,
-                  aggregator: Array[Double] => Double = v => v.sum / v.length,
-                  minValue: Double = 0.0,
-                  maxValue: Double = 1.0,
-                  cellSize: Int = 1000,
-                  crs: CoordinateReferenceSystem = CRS.decode("EPSG:3035")) = {
+  def mapColorHSV(
+    world: World[Individual],
+    originalBoundingBox: BoundingBox,
+    width: Int,
+    height: Int,
+    file: File,
+    getValue: Individual => Double,
+    atHome: Boolean = true,
+    textLeft: String= "",
+    textRight: String= "",
+    filter: Int => Boolean = _=>true,
+    aggregator: Array[Double] => Double = v => v.sum / v.length,
+    minValue: Double = 0.0,
+    maxValue: Double = 1.0,
+    cellSize: Int = 1000,
+    crs: CoordinateReferenceSystem = CRS.decode("EPSG:3035")) = {
 //    val minX = boundingBox.minI
 //    val minY = boundingBox.minJ
 //    val maxX = minX + width
@@ -154,11 +154,11 @@ object SimulationApp extends App {
 
 
   case class Config(
-                     population: Option[File] = None,
-                     moves: Option[File] = None,
-                     days: Option[Int] = None,
-                     output: Option[File] = None,
-                     seed: Option[Long] = None)
+    population: Option[File] = None,
+    moves: Option[File] = None,
+    days: Option[Int] = None,
+    output: Option[File] = None,
+    seed: Option[Long] = None)
 
   val builder = OParser.builder[Config]
   val parser = {
@@ -207,19 +207,19 @@ object SimulationApp extends App {
       }
 
 
-        simulate(
-          days = config.days.get,
-          population = worldFeatures,
-          moves = moves,
-          moveType = MoveType.Data,
-          buildIndividual,
-          exchange,
-          Individual.stableDestinationsV,
-          Individual.locationV,
-          Individual.homeV,
-          Individual.socialCategoryV.get,
-          rng = rng
-        )
+      simulate(
+        days = config.days.get,
+        population = worldFeatures,
+        moves = moves,
+        moveType = MoveType.Data,
+        buildIndividual,
+        exchange,
+        Individual.stableDestinationsV,
+        Individual.locationV,
+        Individual.homeV,
+        Individual.socialCategoryV.get,
+        rng = rng
+      )
     case _ =>
   }
 
