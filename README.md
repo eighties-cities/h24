@@ -44,7 +44,7 @@ The following command extracts the data for the entire Île-de-France région:
 ```shell script
 sbt "runMain eighties.h24.tools.ExtractRelevantData -c data/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2014/CONTOURS-IRIS_2-0_SHP_LAMB93_FE-2014/CONTOURS-IRIS_FE.shp -g data/GRID/R_rfl09_LAEA1000.shp -p data/base-ic-evol-struct-pop-2012.xls -f data/base-ic-diplomes-formation-2012.xls -d 75,77,78,91,92,93,94,95 -o prepared_data_IDF"
 ```
-The following command extracts the data for the entire french territory:
+The following command extracts the data for Metropolitan France:
 ```shell script
 sbt "runMain eighties.h24.tools.ExtractRelevantData -c data/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS/1_DONNEES_LIVRAISON_2014/CONTOURS-IRIS_2-0_SHP_LAMB93_FE-2014/CONTOURS-IRIS_FE.shp -g data/GRID/R_rfl09_LAEA1000.shp -p data/base-ic-evol-struct-pop-2012.xls -f data/base-ic-diplomes-formation-2012.xls -o prepared_data"
 ```
@@ -61,7 +61,7 @@ For Île-de-France (note we added a JVM option to give more memory to the proces
 ```shell script
 sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationGenerator -c prepared_data_IDF/CONTOURS-IRIS_FE.shp -g prepared_data_IDF/R_rfl09_LAEA1000.shp -s 1000 -p prepared_data_IDF/base-ic-evol-struct-pop-2012.csv.lzma -f prepared_data_IDF/base-ic-diplomes-formation-2012.csv.lzma -o results_IDF/population.bin"
 ```
-For the entire french territory:
+For Metropolitan France:
 ```shell script
 sbt -J-Xmx8G "runMain eighties.h24.tools.PopulationGenerator -c prepared_data/CONTOURS-IRIS_FE.shp -g prepared_data/R_rfl09_LAEA1000.shp -s 1000 -p prepared_data/base-ic-evol-struct-pop-2012.csv.lzma -f prepared_data/base-ic-diplomes-formation-2012.csv.lzma -o results/population.bin"
 ```
@@ -72,12 +72,12 @@ For Île-de-France (note we added a JVM option to give more memory to the proces
 sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationShapefileExporter -p results_IDF/population.bin -o results_IDF/population.shp"
 ```
 
-For the entire french territory, a shapefile will not work, you can use the geopackage exporter:
+For Metropolitan France, a shapefile will not work, you can use the geopackage exporter:
 ```shell script
 sbt -J-Xmx8G "runMain eighties.h24.tools.PopulationGeopackageExporter -p results/population.bin -o results/population.gpkg"
 ```
-And now, you have a french synthetic population!
-![A french synthetic population map](images/population_heatmap.png "A french synthetic population")
+And now, you have a Metropolitan France synthetic population!
+![A Metropolitan France synthetic population map](images/population_heatmap.png "A Metropolitan France synthetic population")
 
 ## Let's use Origin-Destination data
 
