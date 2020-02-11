@@ -192,7 +192,7 @@ object  generation {
   val flatCSV = (s:Seq[Vector[Double]]) => s.flatten.toVector
 
   def readEducationSex(sexData : CSVData) = CSVData.mapToArea[Vector[Vector[Double]]](sexData)
-  def readAgeSchool(eduData:CSVData) = CSVData.mapToArea[Vector[Double]](eduData)(transposeCSV)
+  def readAgeSchool(eduData:CSVData) = CSVData.mapToArea[Vector[Double]](eduData)(flatCSV)
   def readAgeSex(popData : CSVData) = CSVData.mapToArea[Vector[Double]](popData)(flatCSV)
 
   def readEquipment(file: File) = withCSVReader(file)(CommaFormat){ reader =>
@@ -254,10 +254,38 @@ object  generation {
     } finally store.dispose()
   }
 
+  def sampleIris(ageSexV: Vector[Double], schoolAgeV: Vector[Double], educationSexV: Vector[Vector[Double]], rnd: Random) = {
+    val total = ageSexV.sum
+
+    val ageSexSizes = Seq(6, 2)
+    val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
+
+    val educationSexSizes = Seq(7)
+    val educationSexVariates = ArrayBuffer(
+      new RasterVariate(educationSexV(0).toArray, educationSexSizes),
+      new RasterVariate(educationSexV(1).toArray, educationSexSizes))
+
+    (0 until total.toInt).map { _ =>
+      val sample = ageSexVariate.compute(rnd)
+      val ageIndex = (sample(0) * ageSexSizes.head).toInt
+      val sex = (sample(1) * ageSexSizes(1)).toInt
+      val schooled = ageIndex match {
+        case 0 => rnd.nextDouble() < (schoolAgeV.slice(7,10).sum / (ageSexV(0) + ageSexV(6)))//schoolAgeV.slice(0,3).sum)
+        case 1 => rnd.nextDouble() < (schoolAgeV.slice(10,13).sum / schoolAgeV.slice(3,6).sum)
+        case _ => rnd.nextDouble() < (schoolAgeV(13) / schoolAgeV(6))
+      }
+      val education = if (schooled) 0 else {
+        if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
+        else 1 // less thant 15yo but not in school => DIPL0
+      }
+      (ageIndex, sex, education)
+    }
+  }
+
   /*
-  Generate the population by considering the geometries of the irises.
-  This generates a population from the statistics at the iris level and chooses the cell in which the sampled individuals are placed by selecting the cells that intersect the iris geometries.
-   */
+    Generate the population by considering the geometries of the irises.
+    This generates a population from the statistics at the iris level and chooses the cell in which the sampled individuals are placed by selecting the cells that intersect the iris geometries.
+     */
   def generatePopulation(
     rnd: Random,
     irises: Seq[AreaID],
@@ -290,16 +318,8 @@ object  generation {
       val total = ageSexV.sum
       // make sure all relevant distributions exist
       if (total > 0 && ageSexV.nonEmpty && schoolAgeV.nonEmpty && educationSexV(0).nonEmpty && educationSexV(1).nonEmpty) {
-        val ageSexSizes = Seq(6, 2)
-        val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
-
-        val educationSexSizes = Seq(7)
-        val educationSexVariates = ArrayBuffer(
-          new RasterVariate(educationSexV(0).toArray, educationSexSizes),
-          new RasterVariate(educationSexV(1).toArray, educationSexSizes))
-
+        def seq = sampleIris(ageSexV, schoolAgeV, educationSexV, rnd)
         val transformedIris = JTS.transform(geometry(id).get, transform)
-
         val relevantCells = cells.query(transformedIris.getEnvelopeInternal).toArray.toSeq.map(_.asInstanceOf[KMCell]).filter(_._1.intersects(transformedIris))
         val relevantCellsArea = relevantCells.map {
           cell => {
@@ -307,37 +327,13 @@ object  generation {
             ((cell._3, cell._4), cell._2 * g.getArea / cell._1.getArea)
           }
         }.toArray.filter { case (_, v) => v > 0 }
-
-        if (relevantCellsArea.isEmpty) {
-          // FIXME there is no cell with a positive (sic!) population for this IRIS.
-          //  We could add a configuration parameter to decide to use all cells anyway...
-          IndexedSeq()
-        } else (0 until total.toInt).map { _ =>
-          val sample = ageSexVariate.compute(rnd)
-          val ageIndex = (sample(0) * ageSexSizes.head).toInt
-          val ageInterval = Age.all(ageIndex)
-          val residual = sample(0) * ageSexSizes.head - ageIndex
-          val age = ageInterval.to.map(max => rescale(ageInterval.from, max, residual))
-          val sex = (sample(1) * ageSexSizes(1)).toInt
-
-          var tempIndex = -1
-          var tempP = -1.0
-          val schooled = age match {
-            case Some(a) =>
-              val schoolAgeIndex = SchoolAge.index(a)
-              tempIndex = schoolAgeIndex
-              if (schoolAgeIndex == 0) false else {
-                tempP = schoolAgeV(schoolAgeIndex - 1)
-                rnd.nextDouble() < schoolAgeV(schoolAgeIndex - 1)
-              }
-            case None => false
-          }
-          val education = if (schooled) 0 else {
-            if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
-            else 1
-          }
-          val cell = multinomial(relevantCellsArea)(rnd)
-          IndividualFeature(ageCategory = ageIndex, sex = sex, education = education, location = cell)
+        val sampledCells = if (relevantCellsArea.isEmpty) {
+          // if no cell with proper population data, sample uniformly in all cells intersecting
+          relevantCells.map{cell=>((cell._3, cell._4), 1.0)}.toArray
+        } else relevantCellsArea
+        seq.map {sample=>
+          val cell = multinomial(sampledCells)(rnd)
+          IndividualFeature(ageCategory = sample._1, sex = sample._2, education = sample._3, location = cell)
         }.filter(_.ageCategory > 0) //remove people with age in 0-14
       } else IndexedSeq()
     }
@@ -349,18 +345,18 @@ object  generation {
     filter: String => Boolean,
     shapeData: ShapeData,
     popData:CSVData,
-    eduData:CSVData,
-    sexData:CSVData,
+    schoolAgeData:CSVData,
+    educationSexData:CSVData,
     cellsData:CellsData,
     rng: Random,
     pop: (Random, Seq[AreaID], AreaID => Option[MultiPolygon], Map[AreaID, Vector[Double]], Map[AreaID, Vector[Double]], Map[AreaID, Vector[Vector[Double]]], STRtree) => Seq[IndexedSeq[generation.IndividualFeature]]) =
     for {
       (spatialUnit, geom) <- readGeometry(shapeData, filter)
       ageSex <- readAgeSex(popData)
-      schoolAge <- readAgeSchool(eduData)
-      educationSex <- readEducationSex(sexData)
+      schoolAge <- readAgeSchool(schoolAgeData)
+      educationSex <- readEducationSex(educationSexData)
       cells <- readCells(cellsData)
-    } yield pop(rng, spatialUnit, geom, ageSex, schoolAge, educationSex, cells).toIterator.flatten
+    } yield pop(rng, spatialUnit, geom, ageSex, schoolAge, educationSex, cells).flatten
 
   /*
   Generate the population without considering the geometries of the irises.
