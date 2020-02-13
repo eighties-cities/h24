@@ -149,7 +149,7 @@ object space {
     home: Lens[I, Location],
     rng: Random,
     attractions: Array[Attraction] = Array.empty,
-    included: IndividualFeature => Boolean = feature => Education(feature.education) != Education.Schol && Age(feature.ageCategory) != Age.From0To14) = {
+    included: IndividualFeature => Boolean = feature => /*Education(feature.education) != Education.Schol && */Age(feature.ageCategory) != Age.From0To14) = {
 
     def individuals: Array[I] = features.filter(included).map(f => build(f, rng))
 
