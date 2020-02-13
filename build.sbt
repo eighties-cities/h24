@@ -48,9 +48,9 @@ libraryDependencies ++= Seq (
   "org.typelevel"  %% "squants"  % "1.6.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.3.1",
-  //"javax.media" % "jai_core" % "1.1.3" from ("http://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar", allowInsecureProtocol = true),
-  //"javax.media" % "jai_codec" % "1.1.3",
-  //"javax.media" % "jai_imageio" % "1.1",
+  "javax.media" % "jai-core" % "1.1.3"  % "runtime" from "https://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
+  "javax.media" % "jai_codec" % "1.1.3" % "runtime",
+  "javax.media" % "jai_imageio" % "1.1" % "runtime",
   "org.apache.poi" % "poi-ooxml"  % "4.1.1",
   //"org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
 )
