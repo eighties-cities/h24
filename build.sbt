@@ -4,7 +4,7 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.13.1"
+scalaVersion := "2.12.10"
 
 crossScalaVersions := Seq("2.12.10", "2.13.1")
 
