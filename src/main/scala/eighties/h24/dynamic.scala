@@ -200,6 +200,7 @@ object dynamic {
           .fileMmapPreclearDisable() // Make mmap file faster
           .cleanerHackEnable()
           .fileLockDisable() // Do not lock file (pb since db not closed)
+          .readOnly()
           .make
 
         db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
