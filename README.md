@@ -131,6 +131,8 @@ For Loire-Atlantique (note we added a JVM option to give more memory to the proc
 sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_44/H24_location_noID_NantesRegion.csv.lzma -s EPSG:2154 -p results_44/population.bin -m results_44/moves.bin"
 ```
 
+Please also note that we need to specify the SRID used in the input survey.
+
 ### Optionally, check your matrix
 Generate the matrix destinations
 ```shell script
