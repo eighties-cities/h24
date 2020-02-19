@@ -23,7 +23,7 @@ library(sf)
 ################# TRIP TABLE #######################
 
 # Load data
-load("~/H24/H24_Library/data_egt/deplacements_semaine.RData")
+load("data_egt/deplacements_semaine.RData")
 
   ##Clean ID carreau
   deplacements_semaine$resc[deplacements_semaine$resc=="641771g"] <- "641771G"
@@ -157,7 +157,7 @@ tripTable <- tripTable %>%
 
 
 ## Add centroids
-sfZF <- st_read("~/H24/H24_Library/data_egt/carr100m_proj.shp", stringsAsFactors = F)  %>% 
+sfZF <- st_read("data_egt/carr100m_proj.shp", stringsAsFactors = F)  %>% 
   st_transform(crs = "+init=epsg:27572")
 sfZF$centroid <- st_centroid(sfZF$geometry)
 sfZF$ZF_X <- as.character(lapply (sfZF$centroid, '[[',1))
@@ -252,14 +252,14 @@ tripTable <- tripTable %>%
             D9, O_PURPOSE, D_PURPOSE, MOD_ADH)
 
 ## Save final trip table
-save(tripTable, file = "~/H24/H24_Library/scriptsr/data/H24_trip.RDS")
-write.csv2(tripTable, "~/H24/H24_Library/scriptsr/data/H24_trip.csv", row.names = FALSE)
+save(tripTable, file = "scriptsr/data/H24_trip.RDS")
+write.csv2(tripTable, "scriptsr/data/H24_trip.csv", row.names = FALSE)
 
 
 ################# IND TABLE #######################
 
 # Load data
-load("~/H24/H24_Library/data_egt/personnes_semaine.RData")
+load("data_egt/personnes_semaine.RData")
 
   ##Clean ID carreau
   personnes_semaine$resc[personnes_semaine$resc=="641771g"] <- "641771G"
@@ -325,5 +325,5 @@ indTable <- indTable %>%
             SEX, AGE = as.numeric(age), KAGE, KEDUC, nondepl)
 
 ## Save final individual table
-save(indTable, file = "~/H24/H24_Library/scriptsr/data/H24_ind.RDS")
-write.csv2(indTable, "~/H24/H24_Library/scriptsr/data/H24_ind.csv", row.names = FALSE)
+save(indTable, file = "scriptsr/data/H24_ind.RDS")
+write.csv2(indTable, "scriptsr/data/H24_ind.csv", row.names = FALSE)

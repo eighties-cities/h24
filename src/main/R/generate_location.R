@@ -26,11 +26,8 @@ library(geosphere)
 
 # Load trip table and individual table
 
-# load("~/H24/H24_Library/scriptsr/data/H24_trip.RDS")
-# load("~/H24/H24_Library/scriptsr/data/H24_ind.RDS")
-
-H24_ind <- read_delim("scriptsr/data/H24_ind.csv",";", escape_double = FALSE, trim_ws = TRUE)
-H24_trip <- read_delim("scriptsr/data/H24_trip.csv",";", escape_double = FALSE, trim_ws = TRUE)
+indTable <- read_delim("scriptsr/data/H24_ind.csv",";", escape_double = FALSE, trim_ws = TRUE)
+tripTable <- read_delim("scriptsr/data/H24_trip.csv",";", escape_double = FALSE, trim_ws = TRUE)
 
 # Reframe hours/minutes variables
 
@@ -550,9 +547,9 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
   
   
 # Save final location table
-save(prezTable, file = "~/H24/H24_Library/scriptsr/data/H24_location.RDS")
+save(prezTable, file = "scriptsr/data/H24_location.RDS")
   
-write.csv2(prezTable, "~/H24/H24_Library/scriptsr/data/H24_location.csv", row.names = FALSE)
+write.csv2(prezTable, "scriptsr/data/H24_location.csv", row.names = FALSE)
 
 
 # Build final location table without ID
@@ -561,9 +558,9 @@ prezTable_noID <- prezTable %>%
             HEURE_DEB, HEURE_FIN, DUREE,
             MOTIF,
             RES_ZF_CODE, RES_ZF_X, RES_ZF_Y, 
-            SEX, AGE, KAGE, KEDUC)
+            SEX, KAGE, KEDUC)
 
 # Save final location table with no ID
-save(prezTable_noID, file = "~/H24/H24_Library/scriptsr/data/H24_location_noID.RDS")
+save(prezTable_noID, file = "scriptsr/data/H24_location_noID.RDS")
 
-write.csv2(prezTable_noID, "~/H24/H24_Library/scriptsr/data/H24_location_noID.csv", row.names = FALSE)
+write.csv2(prezTable_noID, "scriptsr/data/H24_location_noID.csv", row.names = FALSE)

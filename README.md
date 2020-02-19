@@ -92,7 +92,7 @@ You have to standardize trip database and people database issued from origin-des
 
 Whatever the region, you should get two tables: H24_trip.csv & H24_ind.csv
 
-### Step 2. Aggregate OD data
+### Step 2. Create location table from OD data
 Secondly, run the generate_location.R script (located in src/main/R) 
 You should get location table (H24_location.csv) with location of every respondent around the clock
 
@@ -107,13 +107,13 @@ Respondent attributes
 - RES_ZF_X &  RES_ZF_Y: coordinates X Y – centroids of the residential area – projection L93
 - RES_ZF_CODE: ID of the residential area
 - SEX: Male (1); Female (2)
-- AGE: Age (in years)
 - KAGE: Age in groups. 5-15 yrs (0); 16-29 yrs (1); 30-59 yrs (2); 60 yrs. and more (3)
 - KEDUC: Educational level in groups. Low (sans diplôme - BEPC; CEP; BEP/CAP) (1) ; Middle (Bac-Bac+2) (2) ; Up (>Bac+2) (3)
 
 Notes
 - Our dataset is restricted to weekday trips. We considered weekday trips as occurring an “average working day” (Monday to Friday)
 - We kept trips occurring between 4:00 am (day before survey) and 3:59 am (day of survey) and removed trips outside this window.
+- Transportation periods were removed, except if respondents have reported to use an 'adherent' mode of transportation (ie. walking or cycling). In this case, half of the trip was considered as located in the origin area and the other half as located in the destination area.
 - Respondents who reported staying at home all day were assigned to their place of residence over the entire observation period.
 
 You can also directly download resulting location tables (in InputODData folder)

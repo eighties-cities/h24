@@ -21,7 +21,7 @@ library(readxl)
 
 # Load data
 ## open-data : https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/
-tripTable <- read_csv("~/H24/H24_Library/opendata_44/02c_EDGT_44_DEPLA_FAF_TEL_DIST_2015-11-10.txt",col_names = FALSE)
+tripTable <- read_csv("opendata_44/02c_EDGT_44_DEPLA_FAF_TEL_DIST_2015-11-10.txt",col_names = FALSE)
 
 # Extract variables
 tripTable <- tripTable %>% 
@@ -130,15 +130,15 @@ tripTable <- tripTable %>%
             D9, O_PURPOSE, D_PURPOSE, MOD_ADH)
 
 ## Save final trip table
-save(tripTable, file = "~/H24/H24_Library/scriptsr/data/H24_trip.RDS")
-write.csv2(tripTable, "~/H24/H24_Library/scriptsr/data/H24_trip.csv", row.names = FALSE)
+save(tripTable, file = "scriptsr/data/H24_trip.RDS")
+write.csv2(tripTable, "scriptsr/data/H24_trip.csv", row.names = FALSE)
 
 
 ################# IND TABLE #######################
 
 # Load data
 ## See in open-data : https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/
-indTable <- read_csv("~/H24/H24_Library/opendata_44/02b_EDGT_44_PERSO_FAF_TEL_ModifPCS_2016-04-14.txt",col_names = FALSE)
+indTable <- read_csv("opendata_44/02b_EDGT_44_PERSO_FAF_TEL_ModifPCS_2016-04-14.txt",col_names = FALSE)
 
 # Extract variables
 indTable <- indTable %>% 
@@ -211,5 +211,5 @@ indTable <- indTable %>%
             SEX, AGE = as.numeric(P4), KAGE, KEDUC)
 
 ## Save final individual table
-save(indTable, file = "~/H24/H24_Library/scriptsr/data/H24_ind.RDS")
-write.csv2(indTable, "~/H24/H24_Library/scriptsr/data/H24_ind.csv", row.names = FALSE)
+save(indTable, file = "scriptsr/data/H24_ind.RDS")
+write.csv2(indTable, "scriptsr/data/H24_ind.csv", row.names = FALSE)
