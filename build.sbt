@@ -4,9 +4,9 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.11"
 
-crossScalaVersions := Seq("2.12.10", "2.13.1")
+crossScalaVersions := Seq("2.12.11", "2.13.1")
 
 val monocleVersion = "2.0.1"
 
