@@ -48,7 +48,7 @@ libraryDependencies ++= Seq (
   "org.typelevel"  %% "squants"  % "1.6.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.3.1",
-  "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
+  "javax.media" % "jai_core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
   "javax.media" % "jai_codec" % "1.1.3",
   "javax.media" % "jai_imageio" % "1.1",
   "org.apache.poi" % "poi-ooxml"  % "4.1.1",
