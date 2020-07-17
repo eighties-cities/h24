@@ -4,18 +4,18 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.12.11"
+scalaVersion := "2.13.3"
 
-crossScalaVersions := Seq("2.12.11", "2.13.1")
+crossScalaVersions := Seq("2.12.12", "2.13.1")
 
 val monocleVersion = "2.0.1"
 
-val geotoolsVersion = "22.0"
+val geotoolsVersion = "23.0"
 
 //val breezeVersion = "1.0"
 
 resolvers ++= Seq(
-  "osgeo" at "https://download.osgeo.org/webdav/geotools/",
+  "osgeo" at "https://repo.osgeo.org/repository/release/",
   "geosolutions" at "https://maven.geo-solutions.it/",
   "geotoolkit" at "https://maven.geotoolkit.org/",
   "Boundless" at "https://repo.boundlessgeo.com/main"
@@ -48,9 +48,9 @@ libraryDependencies ++= Seq (
   "org.typelevel"  %% "squants"  % "1.6.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.3.1",
-  "javax.media" % "jai-core" % "1.1.3"  % "runtime" from "https://download.osgeo.org/webdav/geotools/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
-  "javax.media" % "jai_codec" % "1.1.3" % "runtime",
-  "javax.media" % "jai_imageio" % "1.1" % "runtime",
+  "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
+  "javax.media" % "jai_codec" % "1.1.3",
+  "javax.media" % "jai_imageio" % "1.1",
   "org.apache.poi" % "poi-ooxml"  % "4.1.1",
   //"org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
 )
@@ -100,4 +100,4 @@ OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map
 */
 
 // do not use coursier at the moment: it fails on jai_core for some reason
-useCoursier := false
+//useCoursier := false
