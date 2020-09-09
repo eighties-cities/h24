@@ -334,7 +334,7 @@ object  generation {
         seq.map {sample=>
           val cell = multinomial(sampledCells)(rnd)
           IndividualFeature(ageCategory = sample._1, sex = sample._2, education = sample._3, location = cell)
-        }.filter(_.ageCategory > 0) //remove people with age in 0-14
+        }//.filter(_.ageCategory > 0) //remove people with age in 0-14
       } else IndexedSeq()
     }
   }
@@ -377,54 +377,55 @@ object  generation {
     val mn = new Multinomial(allCellsArea)
     var i = 0
     irises.map { id =>
-      val ageSexV = ageSex(id)
-      val schoolAgeV = schoolAge(id)
-      val educationSexV = educationSex(id)
+      val ageSexV = ageSex.getOrElse(id, Vector())
+      val schoolAgeV = schoolAge.getOrElse(id, Vector())
+      val educationSexV = educationSex.getOrElse(id, Vector())
       val total = ageSexV.sum
-      val ageSexSizes = Seq(6,2)
-      val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
-      val educationSexSizes = Seq(7)
-      val educationSexVariates = ArrayBuffer(
-        new RasterVariate(educationSexV(0).toArray, educationSexSizes),
-        new RasterVariate(educationSexV(1).toArray, educationSexSizes))
+      if (total > 0 && ageSexV.nonEmpty && schoolAgeV.nonEmpty && educationSexV(0).nonEmpty && educationSexV(1).nonEmpty) {
+        val ageSexSizes = Seq(6,2)
+        val ageSexVariate = new RasterVariate(ageSexV.toArray, ageSexSizes)
+        val educationSexSizes = Seq(7)
+        val educationSexVariates = ArrayBuffer(
+          new RasterVariate(educationSexV(0).toArray, educationSexSizes),
+          new RasterVariate(educationSexV(1).toArray, educationSexSizes))
 
-      val res = (0 until total.toInt).map{ _ =>
-        if (i % 1000000 == 0) Log.log(Calendar.getInstance.getTime + " ind " + i)
-        i = i + 1
+        (0 until total.toInt).map{ _ =>
+          if (i % 1000000 == 0) Log.log(Calendar.getInstance.getTime + " ind " + i)
+          i = i + 1
 
-        val sample = ageSexVariate.compute(rnd)
-        val ageIndex = (sample(0)*ageSexSizes.head).toInt
-        val ageInterval = Age.all(ageIndex)
-        val residual = sample(0)*ageSexSizes.head - ageIndex
-        val age = ageInterval.to.map(max => rescale(ageInterval.from, max, residual))
-        val sex = (sample(1)*ageSexSizes(1)).toInt
+          val sample = ageSexVariate.compute(rnd)
+          val ageIndex = (sample(0)*ageSexSizes.head).toInt
+          val ageInterval = Age.all(ageIndex)
+          val residual = sample(0)*ageSexSizes.head - ageIndex
+          val age = ageInterval.to.map(max => rescale(ageInterval.from, max, residual))
+          val sex = (sample(1)*ageSexSizes(1)).toInt
 
-        var tempIndex = -1
-        var tempP = -1.0
-        val schooled = age match {
-          case Some(a) =>
-            val schoolAgeIndex = SchoolAge.index(a)
-            tempIndex = schoolAgeIndex
-            if (schoolAgeIndex == 0) false else {
-              tempP = schoolAgeV(schoolAgeIndex - 1)
-              rnd.nextDouble() < schoolAgeV(schoolAgeIndex - 1)
-            }
-          case None => false
-        }
-        val education = if (schooled) 0 else {
-          if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
-          else 1
-        }
-        //val cell = multinomial(allCellsArea)(rnd)
-        val cell = mn.draw(rnd)
-        IndividualFeature(
-          ageCategory = ageIndex,
-          sex = sex,
-          education = education,
-          location = cell
-        )
-      }.filter(_.ageCategory > 0)//remove people with age in 0-14
-      res
+          var tempIndex = -1
+          var tempP = -1.0
+          val schooled = age match {
+            case Some(a) =>
+              val schoolAgeIndex = SchoolAge.index(a)
+              tempIndex = schoolAgeIndex
+              if (schoolAgeIndex == 0) false else {
+                tempP = schoolAgeV(schoolAgeIndex - 1)
+                rnd.nextDouble() < schoolAgeV(schoolAgeIndex - 1)
+              }
+            case None => false
+          }
+          val education = if (schooled) 0 else {
+            if (ageIndex > 0) (educationSexVariates(sex).compute(rnd)(0) * educationSexSizes.head).toInt + 1
+            else 1
+          }
+          //val cell = multinomial(allCellsArea)(rnd)
+          val cell = mn.draw(rnd)
+          IndividualFeature(
+            ageCategory = ageIndex,
+            sex = sex,
+            education = education,
+            location = cell
+          )
+        }.filter(_.ageCategory > 0)//remove people with age in 0-14
+      } else IndexedSeq()
     }
   }
 
