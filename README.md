@@ -79,6 +79,18 @@ sbt -J-Xmx8G "runMain eighties.h24.tools.PopulationGeopackageExporter -p results
 And now, you have a Metropolitan France synthetic population!
 ![A Metropolitan France synthetic population map](images/population_heatmap.png "A Metropolitan France synthetic population")
 
+### Generate and export a synthetic population in buildings
+If you want to create a synthetic population in buildings, you can do so.
+```shell script
+sbt -J-Xmx4G "runMain eighties.h24.tools.PopulationInBuildingsGenerator -o results/populationInBuildings.gpkg -c prepared_data/CONTOURS-IRIS_FE.shp -b prepared_data/buildings.shp -p prepared_data/base-ic-evol-struct-pop-2012.csv.lzma -f prepared_data/base-ic-diplomes-formation-2012.csv.lzma"
+```
+To illustrate the results, here is a map of a population generated for Paris.
+![A map of a Paris synthetic population in buildings](images/paris/population_in_buildings.png "A map of a Paris synthetic population in buildings")
+The heatmap of the same population with a radius of 500 meters.
+![A heatmap of a Paris synthetic population in buildings](images/paris/population_in_buildings_heatmap_500.png "A heatmap of a Paris synthetic population in buildings")
+The heatmap of the same area using the population grid from INSEE (with a radius of 500 meters).
+![A heatmap of a Paris using INSEE population grid](images/paris/population_grid_heatmap_500.png "A heatmap of a Paris using INSEE population grid")
+
 ## Let's use Origin-Destination data
 
 ### Step 1. Standardize OD Data

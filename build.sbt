@@ -10,7 +10,7 @@ crossScalaVersions := Seq("2.12.12", "2.13.3")
 
 val monocleVersion = "2.0.1"
 
-val geotoolsVersion = "23.0"
+val geotoolsVersion = "24.0"
 
 //val breezeVersion = "1.0"
 

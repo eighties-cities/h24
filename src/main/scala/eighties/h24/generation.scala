@@ -222,7 +222,7 @@ object  generation {
     (work: Boolean, rng: Random) => {
       val areaID = multinomial(if (work) workFlows else studyFlows)(rng)
       geometry(AreaID(areaID)).map(geom=>{
-        val sampler = new PolygonSampler(geom)
+        val sampler = new PolygonSampler(geom, computeTriangles(geom))
         val coordinate = sampler.apply(rng)
         geom.getFactory.createPoint(coordinate)
       })
@@ -369,7 +369,7 @@ object  generation {
   }
 
   def generatePoint(geom: MultiPolygon, inOutTransform: MathTransform, outCRS: CoordinateReferenceSystem)(rnd:Random) = {
-      val sampler = new PolygonSampler(geom)
+      val sampler = new PolygonSampler(geom, computeTriangles(geom))
       val coordinate = sampler(rnd)
       val transformed = JTS.transform(coordinate, null, inOutTransform)
       JTS.toGeometry(JTS.toDirectPosition(transformed, outCRS))
@@ -488,24 +488,35 @@ object  generation {
 //    )
 //  }
 
-  class PolygonSampler(val polygon: MultiPolygon, val tolerance: Double = 0.1) {
-    val triangles = {
-      val builder = new ConformingDelaunayTriangulationBuilder
-      builder.setSites(polygon)
-      builder.setConstraints(polygon)
-      builder.setTolerance(tolerance)
-      val triangleCollection = builder.getTriangles(polygon.getFactory).asInstanceOf[GeometryCollection]
-      var areaSum = 0.0
-      val trianglesInPolygon = (0 until triangleCollection.getNumGeometries).map(triangleCollection.getGeometryN(_).asInstanceOf[Polygon]).filter(p => {
-        val area = p.getArea
-        p.intersection(polygon).getArea > 0.99 * area
-      })
-      trianglesInPolygon.map { triangle =>
-        areaSum += triangle.getArea
-        (areaSum, triangle)
-      }
+  def sampleInPolygon(polygon: MultiPolygon, rng: Random) = {
+    val envelope = polygon.getEnvelopeInternal
+    var coordinate = new Coordinate(envelope.getMinX + rng.nextDouble() * envelope.getWidth, envelope.getMinY + rng.nextDouble() * envelope.getHeight)
+    while (!polygon.contains(polygon.getFactory.createPoint(coordinate))) {
+      coordinate = new Coordinate(envelope.getMinX + rng.nextDouble() * envelope.getWidth, envelope.getMinY + rng.nextDouble() * envelope.getHeight)
     }
+    coordinate
+  }
+
+  def computeTriangles(polygon: MultiPolygon, tolerance: Double = 0.1) = {
+    val builder = new ConformingDelaunayTriangulationBuilder
+    builder.setSites(polygon)
+    builder.setConstraints(polygon)
+    builder.setTolerance(tolerance)
+    val triangleCollection = builder.getTriangles(polygon.getFactory).asInstanceOf[GeometryCollection]
+    var areaSum = 0.0
+    val trianglesInPolygon = (0 until triangleCollection.getNumGeometries).map(triangleCollection.getGeometryN(_).asInstanceOf[Polygon]).filter(p => {
+      val area = p.getArea
+      p.intersection(polygon).getArea > 0.99 * area
+    })
+    trianglesInPolygon.map { triangle =>
+      areaSum += triangle.getArea
+      (areaSum, triangle)
+    }
+  }
+
+  class PolygonSampler(val polygon: MultiPolygon, val triangles: IndexedSeq[(Double, Polygon)]) {
     val totalArea = triangles.last._1
+
     def apply(rnd: Random) = {
       val s = rnd.nextDouble() * totalArea
       val t = rnd.nextDouble()
@@ -529,7 +540,7 @@ object  generation {
       val y3 = p3.y
       val x = a * x1 + b * x2 + c * x3
       val y = a * y1 + b * y2 + c * y3
-      new Coordinate(x,y)
+      new Coordinate(x, y)
     }
   }
 
