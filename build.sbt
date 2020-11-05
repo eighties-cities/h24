@@ -42,7 +42,7 @@ libraryDependencies ++= Seq (
   "org.apache.commons" % "commons-math3" % "3.6.1",
   "org.tukaani" % "xz" % "1.6",
   "com.github.pathikrit" %% "better-files" % "3.8.0",
-  "org.scalaz" %% "scalaz-core" % "7.2.30",
+  "org.scalaz" %% "scalaz-core" % "7.3.2",
   //"org.scalanlp" %% "breeze" % breezeVersion,
   //"org.scalanlp" %% "breeze-natives" % breezeVersion,
   "org.typelevel"  %% "squants"  % "1.6.0",

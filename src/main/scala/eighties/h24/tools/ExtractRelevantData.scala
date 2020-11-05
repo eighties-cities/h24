@@ -103,7 +103,7 @@ object ExtractRelevantData extends App {
       // extract the relevant data from the input files and put them in the output directory
       val outputContourFile = new java.io.File(outputDirectory, config.contour.get.getName)
       Log.log("outputContourFile = " + outputContourFile)
-      filterShape(config.contour.get, (feature:SimpleFeature)=>if (!config.deps.isDefined) true else config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2)), outputContourFile)
+      filterShape(config.contour.get, (feature:SimpleFeature)=>if (config.deps.isEmpty) true else config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2)), outputContourFile)
       val store = new ShapefileDataStore(outputContourFile.toURI.toURL)
       val ff = CommonFactoryFinder.getFilterFactory2()
       val featureSource = store.getFeatureSource
@@ -116,10 +116,10 @@ object ExtractRelevantData extends App {
       store.dispose()
       val outputInfraPopulationFile = new java.io.File(outputDirectory, config.infraPopulation.get.getName.substring(0, config.infraPopulation.get.getName.lastIndexOf("."))+".csv.lzma")
       Log.log("outputInfraPopulationFile = "+outputInfraPopulationFile)
-      filterCSV(config.infraPopulation.get, (row:Row)=>if (!config.deps.isDefined) true else config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraPopulationFile)
+      filterCSV(config.infraPopulation.get, (row:Row)=>if (config.deps.isEmpty) true else config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraPopulationFile)
       val outputInfraFormationFile = new java.io.File(outputDirectory, config.infraFormation.get.getName.substring(0, config.infraFormation.get.getName.lastIndexOf("."))+".csv.lzma")
       Log.log("outputInfraFormationFile = "+outputInfraFormationFile)
-      filterCSV(config.infraFormation.get, (row:Row)=>if (!config.deps.isDefined) true else config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraFormationFile)
+      filterCSV(config.infraFormation.get, (row:Row)=>if (config.deps.isEmpty) true else config.deps.get.contains(getStringCellValue(row.getCell(3))), outputInfraFormationFile)
       Log.log("done")
     case _ =>
   }

@@ -64,6 +64,7 @@ object PopulationGeopackageExporter extends App {
       val gType = Geometries.getForName (geometryType.getName.getLocalPart)
       entry.setGeometryType (gType)
       val referencedEnvelope = new ReferencedEnvelope(bbox.minI, bbox.maxI+gridSize, bbox.minJ, bbox.maxJ+gridSize, CRS.decode("EPSG:3035"))
+      Log.log(s"bbox ${bbox.minI} - ${bbox.minJ} - ${gridSize}")
       entry.setBounds(referencedEnvelope)
       Log.log("create featureentry")
       geopkg.create(entry, featureType)
@@ -76,7 +77,7 @@ object PopulationGeopackageExporter extends App {
       for {
         feature <- res.individualFeatures
       } {
-        if (index % 10000 == 0) Log.log(s"$index")
+        if (index % 100000 == 0) Log.log(s"$index")
         import feature._
         def point = geometryFactory.createPoint(new Coordinate(bbox.minI + location._1.toDouble * gridSize + gridSize / 2, bbox.minJ + location._2.toDouble * gridSize + gridSize / 2))
         val values = Array[AnyRef](

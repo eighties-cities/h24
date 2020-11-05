@@ -6,6 +6,9 @@ import eighties.h24.space._
 import scopt.OParser
 import Log._
 
+/**
+ * Generate a synthetic population.
+ */
 object PopulationGenerator extends App {
   case class Config(
                      contour: Option[java.io.File] = None,
@@ -59,9 +62,12 @@ object PopulationGenerator extends App {
       val cellFile = config.grid.get.toScala
 
       val cleanIris = Regex(0, s => s.replaceAll("0000$", "").trim)
-
-      val popData = CSVData(baseICEvolStructPopFileName, 6, Seq(Slice(34, 40), Slice(44, 50)), 0, CommaFormat, Some(Seq(cleanIris)))
-      val schoolAgeData = CSVData(baseICDiplomesFormationPopFileName, 6, Seq(Slice(13, 20), Slice(20, 27)), 0, CommaFormat, Some(Seq(cleanIris)))
+      // Values for P12_H  (P12_H0014	P12_H1529	P12_H3044	P12_H4559	P12_H6074	P12_H75P) and P12_H  (P12_F0014	P12_F1529	P12_F3044	P12_F4559	P12_F6074	P12_F75P)
+      val (p12_H, p12_F) = (Slice(34, 40), Slice(44, 50))
+      val popData = CSVData(baseICEvolStructPopFileName, 6, Seq(p12_H, p12_F), 0, CommaFormat, Some(Seq(cleanIris)))
+      // Values for P12_POP (P12_POP0205	P12_POP0610	P12_POP1114	P12_POP1517	P12_POP1824	P12_POP2529	P12_POP30P) and P12_SCOL (P12_SCOL0205	P12_SCOL0610	P12_SCOL1114	P12_SCOL1517	P12_SCOL1824	P12_SCOL2529	P12_SCOL30P)
+      val (p12_POP, p12_SCOL) = (Slice(13, 20),Slice(20, 27))
+      val schoolAgeData = CSVData(baseICDiplomesFormationPopFileName, 6, Seq(p12_POP, p12_SCOL), 0, CommaFormat, Some(Seq(cleanIris)))
       val educationSexData = CSVData(baseICDiplomesFormationPopFileName, 6, Seq(Slice(36, 43), Slice(44, 51)), 0, CommaFormat, Some(Seq(cleanIris)))
       val shpData = ShapeData(contourIRISFile, "DCOMIRIS", Some(Seq(cleanIris))) //changes name after the 2014 update
       val cellsData = CellsData(cellFile, "x_laea", "y_laea", "ind")
@@ -74,16 +80,21 @@ object PopulationGenerator extends App {
         (f.map(IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))), originalBoundingBox)
       }
 
-      val (relocatedFeatures, originalBoudingBox) = relocateFeatures(generateFeatures(
-        _ => true,
-        shpData,
-        popData,
-        schoolAgeData,
-        educationSexData,
-        cellsData,
-        new util.Random(42),
-        if (config.randomPop.get) generatePopulationRandomly else generatePopulation
-      ).get.toArray)
+      if (config.randomPop.get) log("Random population") else log("Observed population")
+      val (relocatedFeatures, originalBoundingBox) = relocateFeatures {
+        generateFeatures(
+          _ => true,
+          shpData,
+          popData,
+          schoolAgeData,
+          educationSexData,
+          cellsData,
+          new util.Random(42),
+          if (config.randomPop.get) {
+            generatePopulationRandomly
+          } else generatePopulation
+        ).get.toArray
+      }
 
       log("Saving population")
       // make sure the output directory structure exists
@@ -93,7 +104,7 @@ object PopulationGenerator extends App {
         WorldFeature(f, obb, BoundingBox(f, IndividualFeature.location.get), gridSize)
       }
       WorldFeature.save(
-        createWorldFeature(relocatedFeatures, originalBoudingBox),
+        createWorldFeature(relocatedFeatures, originalBoundingBox),
         config.output.get
       )
     case _ =>
