@@ -146,8 +146,8 @@ object social {
 
     def apply(education: Education) =
       education match {
-        case Education.Schol | Education.Dipl0 | Education.BEPC | Education.CAPBEP | Education.CEP => Low
-        case Education.BAC | Education.BACP2 => Middle
+        case Education.Dipl0 | Education.BEPC | Education.CAPBEP | Education.CEP => Low
+        case Education.Schol | Education.BAC | Education.BACP2 => Middle
         case Education.SUP => High
       }
 

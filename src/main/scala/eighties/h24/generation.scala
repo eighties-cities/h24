@@ -734,10 +734,11 @@ object  generation {
 
     /**
      * Interpolate an entire move matrix.
+     *
      * @param moveMatrix the input matrix
      * @return an interpolated matrix
      */
-    def interpolate(moveMatrix: MoveMatrix): MoveMatrix =
+    def interpolate(moveMatrix: MoveMatrix): MoveMatrix = {
       moveMatrix.map {
         case (time, cellMatrix) =>
           // create a spatial index to find the neighbors in the matrix
@@ -748,6 +749,7 @@ object  generation {
           }
           time -> CellMatrix.modify(interpolateFlows(index, idw(2.0)))(cellMatrix)
       }
+    }
 
     def getMovesFromOppositeSex(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
