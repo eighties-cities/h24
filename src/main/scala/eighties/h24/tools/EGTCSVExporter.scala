@@ -18,6 +18,7 @@ package eighties.h24.tools
  */
 
 import java.io.File
+
 import com.github.tototoshi.csv.CSVWriter
 import eighties.h24.dynamic.MoveMatrix.Move
 import eighties.h24.dynamic._
@@ -29,6 +30,8 @@ import org.geotools.geometry.jts.JTS
 import org.geotools.referencing.CRS
 import org.locationtech.jts.geom.Coordinate
 import scopt._
+
+import scala.jdk.CollectionConverters.MapHasAsScala
 
 /**
  */
@@ -104,8 +107,8 @@ object EGTCSVExporter extends App {
       outputPath.parent.createDirectories()
 
 
-      def flowDestinationsFromEGT(bb: BoundingBox, gridSize: Int, res: java.io.File) = {
-        import collection.JavaConverters._
+      def flowDestinationsFromEGT(bb: BoundingBox, gridSize: Int, res: java.io.File): Unit = {
+//        import collection.JavaConverters._
         val inCRS = CRS.decode("EPSG:3035")
         val outCRS = CRS.decode("EPSG:4326")
         val transform = CRS.findMathTransform(inCRS, outCRS, true)
@@ -139,7 +142,7 @@ object EGTCSVExporter extends App {
           case Some(edu) => edu == AggregatedEducation.toCode(a.education).toInt
         }
         def matches(a: AggregatedSocialCategory) = matchesSex(a) && matchesAge(a) && matchesEdu(a)
-        map.groupBy(_._1._1).mapValues(_.flatMap(_._2).filter(x=>matches(x._1)).flatMap(_._2.toSeq)).
+        map.groupBy(_._1._1).view.mapValues(_.flatMap(_._2).filter(x=>matches(x._1)).flatMap(_._2.toSeq)).
 //          map(x=>(x._1,x._2.flatMap(_._2).flatMap(_._2))).
           filter{case ((i: Int,j: Int), _)=>(i % 2 == 0)&&(j % 2 == 0)}.//keep only even origins
           foreach{case ((i: Int,j: Int), moves: Iterable[Move]) =>

@@ -17,6 +17,6 @@ package eighties.h24.tools
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 object math {
-  def clamp(v: Double, min: Double = -1.0, max: Double = 1.0) = scala.math.min(scala.math.max(v, min), max)
-  def rescale(min: Double, max: Double, value: Double) = min + value * (max - min)
+  def clamp(v: Double, min: Double = -1.0, max: Double = 1.0): Double = scala.math.min(scala.math.max(v, min), max)
+  def rescale(min: Double, max: Double, value: Double): Double = min + value * (max - min)
 }

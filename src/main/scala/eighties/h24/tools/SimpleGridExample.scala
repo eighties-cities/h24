@@ -25,11 +25,12 @@ object SimpleGridExample extends App {
 
   // Generate population
 
-  Log.log(Calendar.getInstance.getTime + "Generating population")
+  Log.log(Calendar.getInstance.getTime.toString + "Generating population")
   val randomPop = true
   val features = generateFeatures(
     _ => true,
     shpData,
+    popData,// FIXME : I just gave it a vector with the right signature for it to compile...
     popData,
     eduData,
     sexData,
@@ -40,13 +41,13 @@ object SimpleGridExample extends App {
 
   // Relocate population
 
-  Log.log(Calendar.getInstance.getTime + " Relocating population")
+  Log.log(Calendar.getInstance.getTime.toString + " Relocating population")
 
   val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
   def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox))
   val relocatedFeatures = features.map(relocate)
 
-  Log.log(Calendar.getInstance.getTime + " Saving population")
+  Log.log(Calendar.getInstance.getTime.toString + " Saving population")
   val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
   WorldFeature.save(
     WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, 1000),

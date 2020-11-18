@@ -18,14 +18,14 @@ object dynamic {
 
   import MoveMatrix._
 
-  def reachable[T](index: Index[T]) =
+  def reachable[T](index: Index[T]): Seq[(Int, Int)] =
     for {
       i <- 0 until index.sideI
       j <- 0 until index.sideJ
       if !index.cells(i)(j).isEmpty
     } yield (i, j)
 
-  def randomMove[I: ClassTag](world: World[I], timeSlice: TimeSlice, ratio: Double, location: Lens[I, Location], stableDestinations: I => Map[TimeSlice, Location], random: Random) = {
+  def randomMove[I: ClassTag](world: World[I], timeSlice: TimeSlice, ratio: Double, location: Lens[I, Location], stableDestinations: I => Map[TimeSlice, Location], random: Random): World[I] = {
     val reach = reachable(Index.indexIndividuals(world, location.get))
     val rSize = reach.size
     def randomLocation = location.modify(l => if(random.nextDouble() < ratio) reach(random.nextInt(rSize)) else l)
@@ -33,7 +33,7 @@ object dynamic {
     (World.allIndividuals[I] modify move) (world)
   }
 
-  def goBackHome[W, I](world: W, allIndividuals: Traversal[W, I], location: Lens[I, Location], home: I => Location) = {
+  def goBackHome[W, I](world: W, allIndividuals: Traversal[W, I], location: Lens[I, Location], home: I => Location): W = {
     def m = (individual: I) => location.set(home(individual))(individual)
     (allIndividuals modify m)(world)
   }
@@ -45,7 +45,7 @@ object dynamic {
     }
 
     case class TimeSlice(from: Int, to: Int) {
-      def length = to - from
+      def length: Int = to - from
       override def toString = s"${from}_$to"
     }
 
@@ -164,7 +164,7 @@ object dynamic {
 //      finally os.close()
 //    }
 
-    def saveCell(moves: MoveMatrix, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit) = {
+    def saveCell(moves: MoveMatrix, save: (TimeSlice, (Int, Int), MoveMatrix.Cell) => Unit): Unit = {
       getLocatedCells(moves).foreach { case (t, l, cell) => save(t, l, cell) }
     }
 

@@ -8,6 +8,7 @@ import monocle.macros._
 import eighties.h24.generation.IndividualFeature
 import eighties.h24.tools.lens._
 
+import scala.collection.View
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -21,23 +22,23 @@ object space {
     def lowerBound(l1: Location, l2: Location): Location = (math.min(l1._1, l2._1), math.min(l1._2, l2._2))
     def upperBound(l1: Location, l2: Location): Location = (math.max(l1._1, l2._1), math.max(l1._2, l2._2))
 
-    def apply(i:Int, j:Int) = (i,j)
+    def apply(i:Int, j:Int): (Int, Int) = (i,j)
 
-    def fromIndex(i: Short) = {
+    def fromIndex(i: Short): (Int, Int) = {
       val x = i / Byte.MaxValue
       val y = i - (x * Byte.MaxValue)
       (x, y)
     }
 
-    def toIndex(l: Location) = (l._1 * Byte.MaxValue + l._2).toShort
+    def toIndex(l: Location): ShortAggregatedSocialCategory = (l._1 * Byte.MaxValue + l._2).toShort
 
-    lazy val indexIso = monocle.Iso[Short, Location](fromIndex)(toIndex)
+    lazy val indexIso: Iso[ShortAggregatedSocialCategory, (Int, Int)] = monocle.Iso[Short, Location](fromIndex)(toIndex)
 
-    def noLocationIndex = Short.MaxValue
+    def noLocationIndex: ShortAggregatedSocialCategory = Short.MaxValue
   }
 
   /* définition d'un voisinage*/
-  def neighbours(side: Int, location: Location, size: Int) = {
+  def neighbours(side: Int, location: Location, size: Int): Seq[(Int, Int)] = {
     val (i, j) = location
     for {
       di <- -size to size
@@ -49,10 +50,10 @@ object space {
     } yield (i + di, j + dj)
   }
 
-  def cell(p: Coordinate, gridSize: Int) = ((p._1 / gridSize).toInt, (p._2 / gridSize).toInt)
-  def cellIndex(l: Location, gridSize: Int) = ((l._1 / gridSize).toInt, (l._2 / gridSize).toInt)
+  def cell(p: Coordinate, gridSize: Int): (Int, Int) = ((p._1 / gridSize).toInt, (p._2 / gridSize).toInt)
+  def cellIndex(l: Location, gridSize: Int): (Int, Int) = (l._1 / gridSize, l._2 / gridSize)
 
-  def distance(l1: Location, l2: Location) = {
+  def distance(l1: Location, l2: Location): Double = {
     val c1 = new org.locationtech.jts.geom.Coordinate(l1._1, l1._2)
     val c2 = new org.locationtech.jts.geom.Coordinate(l2._1, l2._2)
     c1.distance(c2)
@@ -69,7 +70,7 @@ object space {
 
     def translate(boundingBox: BoundingBox)(location: Location): Location = (location._1 - boundingBox.minI, location._2 - boundingBox.minJ)
 
-    def allLocations(boundingBox: BoundingBox) =
+    def allLocations(boundingBox: BoundingBox): Seq[(Int, Int)] =
       for {
         i <- boundingBox.minI to boundingBox.maxI
         j <- boundingBox.minJ to boundingBox.maxJ
@@ -77,8 +78,8 @@ object space {
   }
 
   case class BoundingBox(minI: Int, maxI: Int, minJ: Int, maxJ: Int) {
-    def sideI = maxI - minI + 1
-    def sideJ = maxJ - minJ + 1
+    def sideI: Int = maxI - minI + 1
+    def sideJ: Int = maxJ - minJ + 1
   }
 
   object World {
@@ -99,8 +100,8 @@ object space {
         boundingBox.sideJ)
     }
 
-    def individualsVector[I: ClassTag] = World.individuals[I] composeLens arrayToVector[I]
-    def allIndividuals[I: ClassTag] = individualsVector[I] composeTraversal each
+    def individualsVector[I: ClassTag]: PLens[World[I], World[I], Vector[I], Vector[I]] = World.individuals[I] composeLens arrayToVector[I]
+    def allIndividuals[I: ClassTag]: PTraversal[World[I], World[I], I, I] = individualsVector[I] composeTraversal each
 
   }
 
@@ -113,10 +114,10 @@ object space {
 
   object Index {
 
-    def indexIndividuals[I: ClassTag](world: World[I], location: I => Location) =
+    def indexIndividuals[I: ClassTag](world: World[I], location: I => Location): Index[I] =
       Index[I](World.individuals.get(world).iterator, location, world.sideI, world.sideJ)
 
-    def indexAttraction[I](world: World[I]) =
+    def indexAttraction[I](world: World[I]): Index[Attraction] =
       Index[Attraction](World.attractions.get(world).iterator, Attraction.location.get(_), world.sideI, world.sideJ)
 
     def apply[T: ClassTag](content: Iterator[T], location: T => Location, sideI: Int, sideJ: Int): Index[T] = {
@@ -130,14 +131,14 @@ object space {
       Index[T](cellBuffer.map(_.map(_.toArray)), sideI, sideJ)
     }
 
-    def getLocatedCells[T, U](index: Index[T]) =
+    def getLocatedCells[T, U](index: Index[T]): View[(Array[T], (Int, Int))] =
       for {
         (l, i) <- index.cells.view.zipWithIndex
         (c, j) <- l.zipWithIndex
       } yield (c, Location(i, j))
 
-    def allCells[T: ClassTag] = cells[T] composeIso arrayVectorIso[Array[Array[T]]] composeTraversal each composeIso arrayVectorIso[Array[T]] composeTraversal each composeIso arrayVectorIso[T]
-    def allIndividuals[T: ClassTag] = allCells[T] composeTraversal each
+    def allCells[T: ClassTag]: PTraversal[Index[T], Index[T], Vector[T], Vector[T]] = cells[T] composeIso arrayVectorIso[Array[Array[T]]] composeTraversal each composeIso arrayVectorIso[Array[T]] composeTraversal each composeIso arrayVectorIso[T]
+    def allIndividuals[T: ClassTag]: PTraversal[Index[T], Index[T], T, T] = allCells[T] composeTraversal each
   }
 
   @Lenses case class Index[T](cells: Array[Array[Array[T]]], sideI: Int, sideJ: Int)
@@ -149,7 +150,13 @@ object space {
     home: Lens[I, Location],
     rng: Random,
     attractions: Array[Attraction] = Array.empty,
-    included: IndividualFeature => Boolean = feature => Age(feature.ageCategory) != Age.From0To14 && Age(feature.ageCategory) != Age.Above75) = {
+    included: IndividualFeature => Boolean = feature =>
+      Age(feature.ageCategory) != Age.From0To2 &&
+        Age(feature.ageCategory) != Age.From3To5 &&
+        Age(feature.ageCategory) != Age.From6To10 &&
+        Age(feature.ageCategory) != Age.From11To14 &&
+        Age(feature.ageCategory) != Age.From75To79 &&
+        Age(feature.ageCategory) != Age.Above80): World[I] = {
 
     def individuals: Array[I] = features.filter(included).map(f => build(f, rng))
 

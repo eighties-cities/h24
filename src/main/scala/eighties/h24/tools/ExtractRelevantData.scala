@@ -80,7 +80,7 @@ object ExtractRelevantData extends App {
   }
 
   def getStringCellValue(cell: Cell) = {for (cel <- Option(cell)) yield {if (cel.getCellType == CellType.NUMERIC) cel.getNumericCellValue.toString else cel.getStringCellValue}} getOrElse ""
-  def filterCSV(input: File, rowFilter: Row => Boolean, output: File) = {
+  def filterCSV(input: File, rowFilter: Row => Boolean, output: File): Unit = {
     val bos = new BufferedOutputStream(new FileOutputStream(output))
     val lzmaos = new LZMACompressorOutputStream(bos)
     val writer = CSVWriter.open(lzmaos)

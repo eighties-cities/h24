@@ -64,7 +64,10 @@ object PopulationGenerator extends App {
       val cleanIris = Regex(0, s => s.replaceAll("0000$", "").trim)
       // Values for P12_H  (P12_H0014	P12_H1529	P12_H3044	P12_H4559	P12_H6074	P12_H75P) and P12_H  (P12_F0014	P12_F1529	P12_F3044	P12_F4559	P12_F6074	P12_F75P)
       val (p12_H, p12_F) = (Slice(34, 40), Slice(44, 50))
-      val popData = CSVData(baseICEvolStructPopFileName, 6, Seq(p12_H, p12_F), 0, CommaFormat, Some(Seq(cleanIris)))
+      val age15SexData = CSVData(baseICEvolStructPopFileName, 6, Seq(p12_H, p12_F), 0, CommaFormat, Some(Seq(cleanIris)))
+      // Values for P12_10  (P12_POP0002	P12_POP0305	P12_POP0610	P12_POP1117	P12_POP1824	P12_POP2539	P12_POP4054	P12_POP5564	P12_POP6579	P12_POP80P)
+      val p12_10 = Slice(14, 24)
+      val age10Data = CSVData(baseICEvolStructPopFileName, 6, Seq(p12_10), 0, CommaFormat, Some(Seq(cleanIris)))
       // Values for P12_POP (P12_POP0205	P12_POP0610	P12_POP1114	P12_POP1517	P12_POP1824	P12_POP2529	P12_POP30P) and P12_SCOL (P12_SCOL0205	P12_SCOL0610	P12_SCOL1114	P12_SCOL1517	P12_SCOL1824	P12_SCOL2529	P12_SCOL30P)
       val (p12_POP, p12_SCOL) = (Slice(13, 20),Slice(20, 27))
       val schoolAgeData = CSVData(baseICDiplomesFormationPopFileName, 6, Seq(p12_POP, p12_SCOL), 0, CommaFormat, Some(Seq(cleanIris)))
@@ -85,7 +88,8 @@ object PopulationGenerator extends App {
         generateFeatures(
           _ => true,
           shpData,
-          popData,
+          age10Data,
+          age15SexData,
           schoolAgeData,
           educationSexData,
           cellsData,

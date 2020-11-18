@@ -12,7 +12,7 @@ val monocleVersion = "2.0.1"
 
 val geotoolsVersion = "24.0"
 
-//val breezeVersion = "1.0"
+val breezeVersion = "1.1"
 
 resolvers ++= Seq(
   "osgeo" at "https://repo.osgeo.org/repository/release/",
@@ -43,8 +43,8 @@ libraryDependencies ++= Seq (
   "org.tukaani" % "xz" % "1.6",
   "com.github.pathikrit" %% "better-files" % "3.8.0",
   "org.scalaz" %% "scalaz-core" % "7.3.2",
-  //"org.scalanlp" %% "breeze" % breezeVersion,
-  //"org.scalanlp" %% "breeze-natives" % breezeVersion,
+  "org.scalanlp" %% "breeze" % breezeVersion,
+  "org.scalanlp" %% "breeze-natives" % breezeVersion,
   "org.typelevel"  %% "squants"  % "1.6.0",
   "joda-time" % "joda-time" % "2.9.7",
   "io.suzaku" %% "boopickle" % "1.3.1",

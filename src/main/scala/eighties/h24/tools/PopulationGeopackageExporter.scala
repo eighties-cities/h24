@@ -4,6 +4,7 @@ import java.io.{File => JFile}
 import java.util
 
 import eighties.h24.generation._
+import eighties.h24.social.{Age, Education}
 import org.geotools.data.{DataUtilities, DefaultTransaction}
 import org.geotools.geometry.jts.{Geometries, ReferencedEnvelope}
 import org.geotools.geopkg.FeatureEntry
@@ -46,10 +47,10 @@ object PopulationGeopackageExporter extends App {
       val specs = "geom:Point:srid=3035," +
         "cellX:Integer," +
         "cellY:Integer," +
-        "ageCat:Integer," +
-        "sex:Integer," +
-        "education:Integer"
-      val featureTypeName = "GeoPKG"
+        "ageCat:String," +
+        "sex:String," +
+        "education:String"
+      val featureTypeName = "Population"
       val featureType = DataUtilities.createType(featureTypeName, specs)
       val geometryFactory = new GeometryFactory
       import org.geotools.geopkg.GeoPackage
@@ -64,7 +65,7 @@ object PopulationGeopackageExporter extends App {
       val gType = Geometries.getForName (geometryType.getName.getLocalPart)
       entry.setGeometryType (gType)
       val referencedEnvelope = new ReferencedEnvelope(bbox.minI, bbox.maxI+gridSize, bbox.minJ, bbox.maxJ+gridSize, CRS.decode("EPSG:3035"))
-      Log.log(s"bbox ${bbox.minI} - ${bbox.minJ} - ${gridSize}")
+      Log.log(s"bbox ${bbox.minI} - ${bbox.minJ} - $gridSize")
       entry.setBounds(referencedEnvelope)
       Log.log("create featureentry")
       geopkg.create(entry, featureType)
@@ -73,9 +74,8 @@ object PopulationGeopackageExporter extends App {
       val writer = geopkg.writer(entry,true, null, transaction)
       Log.log("Let's go")
       // FIXME the index if for debug only: we might want to remove it later
-      var index = 0
       for {
-        feature <- res.individualFeatures
+        (feature, index) <- res.individualFeatures.zipWithIndex
       } {
         if (index % 100000 == 0) Log.log(s"$index")
         import feature._
@@ -84,14 +84,13 @@ object PopulationGeopackageExporter extends App {
           point,
           location._1.asInstanceOf[AnyRef],
           location._2.asInstanceOf[AnyRef],
-          ageCategory.asInstanceOf[AnyRef],
-          sex.asInstanceOf[AnyRef],
-          education.asInstanceOf[AnyRef]
+          Age(ageCategory).toString.asInstanceOf[AnyRef],
+          (if (sex == 0) "Homme" else "Femme").asInstanceOf[AnyRef],
+          s"$education - ${Education(education).toString}".asInstanceOf[AnyRef]
         )
         def simpleFeature = writer.next
         simpleFeature.setAttributes(values)
         writer.write()
-        index += 1
       }
       Log.log("close writer")
       writer.close()

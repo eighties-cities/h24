@@ -6,6 +6,7 @@ import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataUtilities, Transaction}
 import eighties.h24.generation._
+import eighties.h24.social.{Age, Education}
 import scopt.OParser
 
 object PopulationShapefileExporter extends App {
@@ -36,9 +37,9 @@ object PopulationShapefileExporter extends App {
       val specs = "geom:Point:srid=3035," +
         "cellX:Integer," +
         "cellY:Integer," +
-        "ageCat:Integer," +
-        "sex:Integer," +
-        "education:Integer"
+        "age:String," +
+        "sex:String," +
+        "education:String"
       val geometryFactory = new GeometryFactory
       val factory = new ShapefileDataStoreFactory
       val dataStore = factory.createDataStore(outFile.toURI.toURL)
@@ -59,9 +60,9 @@ object PopulationShapefileExporter extends App {
           point,
           location._1.asInstanceOf[AnyRef],
           location._2.asInstanceOf[AnyRef],
-          ageCategory.asInstanceOf[AnyRef],
-          sex.asInstanceOf[AnyRef],
-          education.asInstanceOf[AnyRef]
+          Age(ageCategory).toString.asInstanceOf[AnyRef],
+          (if (sex == 0) "Homme" else "Femme").asInstanceOf[AnyRef],
+          s"$education - ${Education(education).toString}".asInstanceOf[AnyRef]
         )
         val simpleFeature = writer.next
         simpleFeature.setAttributes(values)

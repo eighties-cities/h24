@@ -20,6 +20,6 @@ import java.util.Calendar
  */
 package object tools {
   object Log {
-    def log(msg: => String) = println(Calendar.getInstance.getTime + " " + msg)
+    def log(msg: => String): Unit = println(Calendar.getInstance.getTime.toString + " " + msg)
   }
 }

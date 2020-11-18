@@ -93,7 +93,7 @@ object SimulationApp extends App {
     minValue: Double = 0.0,
     maxValue: Double = 1.0,
     cellSize: Int = 1000,
-    crs: CoordinateReferenceSystem = CRS.decode("EPSG:3035")) = {
+    crs: CoordinateReferenceSystem = CRS.decode("EPSG:3035")): Unit = {
 //    val minX = boundingBox.minI
 //    val minY = boundingBox.minJ
 //    val maxX = minX + width
@@ -202,7 +202,7 @@ object SimulationApp extends App {
       output.mkdirs()
       def buildIndividual(feature: IndividualFeature, random: Random) = Individual(feature, random)
       def exchange(moved: World[Individual], day: Int, slice: Int, rng: Random) = {
-        mapColorHSV(moved, bbox, moved.sideI, moved.sideJ, new File(output, s"${day}_${slice}.tif"), (_: Individual) => 1, atHome = false, filter = filter, aggregator = v=>v.sum, minValue = 0.0, maxValue = 5000.0)
+        mapColorHSV(moved, bbox, moved.sideI, moved.sideJ, new File(output, s"${day}_$slice.tif"), (_: Individual) => 1, atHome = false, filter = filter, aggregator = v=>v.sum, maxValue = 5000.0)
         moved
       }
 

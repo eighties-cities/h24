@@ -50,7 +50,7 @@ object simulation {
     home: I => Location,
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None) = {
+    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None): World[I] = {
 
 
     @tailrec def simulateOneDay(world: space.World[I], bb: BoundingBox, timeSlices: List[TimeSlice], locatedCell: LocatedCell, day: Int, slice: Int = 0): World[I] = {
@@ -94,7 +94,7 @@ object simulation {
     home: Lens[I, Location],
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None) = {
+    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None): World[I] = {
 
     def worldFeature = WorldFeature.load(population)
     val bbox = worldFeature.originalBoundingBox
@@ -132,7 +132,7 @@ object simulation {
         rng = rng,
         visitor = visitor
       )
-    } finally moveMatrix.close
+    } finally moveMatrix.close()
   }
 
 

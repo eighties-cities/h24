@@ -17,6 +17,9 @@ package eighties.h24.tools
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+import java.io.File
+
+import eighties.h24.dynamic.MoveMatrix.TimeSlice
 import eighties.h24.dynamic._
 import eighties.h24.generation.WorldFeature
 import eighties.h24.space.BoundingBox
@@ -24,9 +27,8 @@ import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataUtilities, Transaction}
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import scopt._
-import java.io.File
 
-import eighties.h24.dynamic.MoveMatrix.{Cell, TimeSlice}
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 /**
  */
@@ -76,7 +78,7 @@ object EGTShapefileExporter extends App {
       val outputPath = c.output.get.toScala
       outputPath.parent.createDirectories()
 
-      def flowDestinationsFromEGT(bb: BoundingBox, gridSize: Int, res: java.io.File) = {
+      def flowDestinationsFromEGT(bb: BoundingBox, gridSize: Int, res: java.io.File): Unit = {
         val factory = new ShapefileDataStoreFactory
         val geomFactory = new GeometryFactory()
         val dataStoreRes = factory.createDataStore(res.toURI.toURL)
@@ -87,15 +89,13 @@ object EGTShapefileExporter extends App {
         val typeNameRes = dataStoreRes.getTypeNames()(0)
         val writerRes = dataStoreRes.getFeatureWriterAppend(typeNameRes, Transaction.AUTO_COMMIT)
 
-        import collection.JavaConverters._
-
-        def allMoves = moveTimeLapse.values().iterator().asInstanceOf[java.util.Iterator[Cell]].asScala.flatMap(_.values.flatten)
+        def allMoves = moveTimeLapse.values().iterator().asScala.flatMap(_.values.flatten)
 
         def allCellsWithMoves =
           moveTimeLapse.keySet().
             iterator().
             asInstanceOf[java.util.Iterator[((Int,Int), TimeSlice)]].asScala.
-            filter(x=>moveTimeLapse.get(x).asInstanceOf[Cell].
+            filter(x=> moveTimeLapse.get(x).
               flatMap(_._2.toSeq).nonEmpty).map(_._1)
 
         def write(i: Int, j: Int): Unit = {

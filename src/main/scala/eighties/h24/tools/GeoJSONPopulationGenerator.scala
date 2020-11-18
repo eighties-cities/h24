@@ -16,7 +16,7 @@ object GeoJSONPopulationGenerator extends App {
   val outputFileName = "population2.json"
   val path = File("data")
   val outputPath = File("results")
-  outputPath.createDirectories
+  outputPath.createDirectories()
   val outFile = outputPath / outputFileName
   val specs = "geom:Point:srid=3035," +
 //              "cellX:Integer," +
@@ -28,9 +28,9 @@ object GeoJSONPopulationGenerator extends App {
   val featureTypeName = "Individual"
   val featureType = DataUtilities.createType(featureTypeName, specs)
   val featureCollection = new DefaultFeatureCollection(featureTypeName, featureType)
-  println(Calendar.getInstance.getTime + " Loading population")
+  println(Calendar.getInstance.getTime.toString + " Loading population")
   val res = WorldFeature.load((outputPath / inputFileName).toJava)
-  println(Calendar.getInstance.getTime + " Converting population")
+  println(Calendar.getInstance.getTime.toString + " Converting population")
   val geometryFactory = new GeometryFactory
   for {
     (feature, _) <- res.individualFeatures.zipWithIndex
@@ -48,9 +48,9 @@ object GeoJSONPopulationGenerator extends App {
     )
     featureCollection.add( SimpleFeatureBuilder.build( featureType, values, null) )
   }
-  println(Calendar.getInstance.getTime + " Writing population")
+  println(Calendar.getInstance.getTime.toString + " Writing population")
   val io = new FeatureJSON
   println(featureCollection.getBounds.getCoordinateReferenceSystem)
   io.writeFeatureCollection(featureCollection, outFile.toJava)
-  println(Calendar.getInstance.getTime + " Finished")
+  println(Calendar.getInstance.getTime.toString + " Finished")
 }

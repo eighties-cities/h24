@@ -24,14 +24,14 @@ object random {
   class Multinomial[T](values: List[(T, Double)]) {
     @tailrec private def multinomial0(values: List[(T, Double)])(draw: Double): T = {
       values match {
-        case Nil ⇒ throw new RuntimeException("List should never be empty.")
-        case (bs, _) :: Nil ⇒ bs
-        case (bs, weight) :: tail ⇒
+        case Nil => throw new RuntimeException("List should never be empty.")
+        case (bs, _) :: Nil => bs
+        case (bs, weight) :: tail =>
           if (draw <= weight) bs
           else multinomial0(tail)(draw - weight)
       }
     }
-    val max =  values.map(_._2).sum
+    val max: Double =  values.map(_._2).sum
     def draw(implicit random: Random): T = {
       val drawn = random.nextDouble() * max
       multinomial0(values)(drawn)
@@ -39,13 +39,13 @@ object random {
   }
 
   implicit class SeqDecorator[T](s: Seq[T]) {
-    def randomElement(random: Random) = {
+    def randomElement(random: Random): T = {
       val size = s.size
       s(random.nextInt(size))
     }
   }
   implicit class ArrayDecorator[T](s: Array[T]) {
-    def randomElement(random: Random) = {
+    def randomElement(random: Random): T = {
       val size = s.length
       s(random.nextInt(size))
     }
@@ -64,8 +64,6 @@ object random {
       cdf(i + 1) = sum
       previousSum = sum
     }
-
-    import collection.Searching._
 
     val drawn = random.nextDouble() * sum
     val drawnIndex = cdf.search(drawn)

@@ -1,6 +1,6 @@
 package eighties.h24.tools
 
-import monocle.Iso
+import monocle.{Iso, Lens}
 
 import scala.reflect.ClassTag
 
@@ -21,7 +21,7 @@ import scala.reflect.ClassTag
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 object lens {
-  def arrayToVector[A: ClassTag] = monocle.Lens[Array[A], Vector[A]](_.toVector)(v => _ => v.toArray)
-  def array2ToVector[A: ClassTag] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => _ => v.map(_.toArray).toArray)
+  def arrayToVector[A: ClassTag]: Lens[Array[A], Vector[A]] = monocle.Lens[Array[A], Vector[A]](_.toVector)(v => _ => v.toArray)
+  def array2ToVector[A: ClassTag]: Lens[Array[Array[A]], Vector[Vector[A]]] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => _ => v.map(_.toArray).toArray)
   def arrayVectorIso[A: ClassTag]: Iso[Array[A], Vector[A]] = Iso[Array[A], Vector[A]](_.toVector)(_.toArray)
 }
