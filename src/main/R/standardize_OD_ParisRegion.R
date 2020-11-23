@@ -135,17 +135,14 @@ tripTable$ID_ED <- "75000_2010"
 ## 1 : home ; 2 : work ; 3 : study ; 4 : shopping ; 5 : leasure ; 6 : others
 
 tripTable <- tripTable %>% 
-  mutate(O_PURPOSE = plyr::mapvalues(ormot_h9, c("", "1", "2", "3", "4", "5","6","7","01", "02", "03", "04", "05","06","07"), 
-                                c(NA,1,2,2,3,4,5,6,1,2,2,3,4,5,6)))
+  mutate(O_PURPOSE = plyr::mapvalues(ormot_h9, c("", "1", "2", "3", "4", "5","6","7", "8","9","01", "02", "03", "04", "05","06","07", "08","09"), 
+                                               c(NA, 1,    2,   2,   3,   4,  5,  6,   5,  6,  1,     2,   2,   3,     4,    5,   6,    5,   6)))
 
 tripTable <- tripTable %>% 
   mutate(D_PURPOSE = plyr::mapvalues(destmot_h9, c("", "1", "2", "3", "4", "5","6","7", "8","9","01", "02", "03", "04", "05","06","07", "08","09"), 
-                                     c(NA,1,2,2,3,4,5,6,5,6, 1,2,2,3,4,5,6,5,6)))
+                                                   c(NA, 1,  2,   2,   3,   4,  5,  6,   5,  6,  1,     2,   2,   3,     4,    5,   6,    5,   6)))
 
 
-# Create 'transportation' variables
-## Mode adherent (MOD_ADH): walk, bike etc. = 1 
-tripTable$MOD_ADH <- ifelse (tripTable$modp_h6=="04" | tripTable$modp_h6=="06", 1, 0)
 
 # Build trip table
 tripTable <- tripTable %>%
@@ -155,7 +152,7 @@ tripTable <- tripTable %>%
             D_ZF = destc, D_SEC = destsect, 
             H_START = orh, M_START = orm,
             H_END = desth, M_END = destm,
-            D9 = duree, O_PURPOSE, D_PURPOSE, MOD_ADH)
+            D9 = duree, O_PURPOSE, D_PURPOSE)
 
 
 ## Add centroids

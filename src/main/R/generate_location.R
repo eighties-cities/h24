@@ -130,10 +130,6 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
@@ -183,10 +179,9 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
+      
+      prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
+     
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
@@ -236,10 +231,7 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
+     
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
@@ -288,11 +280,8 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
-      # prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
+
+      prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
     prezTable_4 <-rbind(prezTable_4, prez_ind)
@@ -340,10 +329,7 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
+
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
@@ -392,10 +378,7 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
+
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
@@ -496,10 +479,7 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
                                  as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_END[i],depl_ind$M_END[i],0)) )
       prez_ind[i, 9] <- ifelse(depl_ind$H_START[i]>23, as.character.Date(ISOdatetime(2010,1,2,depl_ind$H_START[i]-24,depl_ind$M_START[i],0)),
                                as.character.Date(ISOdatetime(2010,1,1,depl_ind$H_START[i],depl_ind$M_START[i],0)) )
-      # if (depl_ind$MOD_ADH[i]==1){
-      #   prez_ind[i+1,8] <-as.character.Date(ymd_hms(prez_ind[i+1,8], truncated=3) - minutes(floor(depl_ind$duree[i]/2)))
-      #   prez_ind[i,9] <-  as.character.Date(ymd_hms(prez_ind[i,9], truncated=3) + minutes(ceiling(depl_ind$duree[i]/2)))
-      # }
+
       prez_ind[i+1, 11] <- depl_ind$D_PURPOSE[i]
       
     }
