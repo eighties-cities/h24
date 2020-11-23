@@ -3,8 +3,8 @@
 #
 # Valid for Paris region (EGT 2010), France
 #
-# November 2019 - Julie Vallée, Aurelie Douet, Guillaume le Roux
-# Mobiliscope : https://mobiliscope.parisgeo.cnrs.fr
+# November 2020 - Julie Vallee, Aurelie Douet, Guillaume le Roux
+# Mobiliscope : https://mobiliscope.cnrs.fr
 # ================================================================================#
 
 
@@ -23,7 +23,7 @@ library(sf)
 ################# TRIP TABLE #######################
 
 # Load data
-load("data_egt/deplacements_semaine.RData")
+load("~/H24/H24_Library/data_egt/deplacements_semaine.RData")
 
   ##Clean ID carreau
   deplacements_semaine$resc[deplacements_semaine$resc=="641771g"] <- "641771G"
@@ -107,7 +107,9 @@ load("data_egt/deplacements_semaine.RData")
   deplacements_semaine$destm[deplacements_semaine$ID_pers=="7510518101" & deplacements_semaine$nd=="3"] <- 50
   deplacements_semaine$destm[deplacements_semaine$ID_pers=="7703394101" & deplacements_semaine$nd=="1"] <- 30
   deplacements_semaine <- filter(deplacements_semaine, ID_pers!="9302190101")
+  
   deplacements_semaine <- arrange(deplacements_semaine, ID_pers, orh,orm)
+
 
   #suppression des individus avec des heures manquantes
   IDhNA <- data.frame(ID_pers = character(length(unique(deplacements_semaine$ID_pers[is.na(deplacements_semaine$orh)==FALSE & is.na(deplacements_semaine$desth)==FALSE]))))
@@ -147,7 +149,7 @@ tripTable$MOD_ADH <- ifelse (tripTable$modp_h6=="04" | tripTable$modp_h6=="06", 
 
 # Build trip table
 tripTable <- tripTable %>%
-  transmute(ID_IND, ID_ED,
+  transmute(ID_IND, ID_ED, NDEP = as.character(nd),
             RES_ZF = resc, RES_SEC = ressect, 
             O_ZF = orc, O_SEC = orsect,
             D_ZF = destc, D_SEC = destsect, 
@@ -157,7 +159,7 @@ tripTable <- tripTable %>%
 
 
 ## Add centroids
-sfZF <- st_read("data_egt/carr100m_proj.shp", stringsAsFactors = F)  %>% 
+sfZF <- st_read("~/H24/H24_Library/data_egt/carr100m_proj.shp", stringsAsFactors = F)  %>% 
   st_transform(crs = "+init=epsg:27572")
 sfZF$centroid <- st_centroid(sfZF$geometry)
 sfZF$ZF_X <- as.character(lapply (sfZF$centroid, '[[',1))
@@ -178,88 +180,27 @@ tripTable$D_ZF_X <- tripTable$ZF_X
 tripTable$D_ZF_Y <- tripTable$ZF_Y
 tripTable <- select (tripTable, -c(ZF_X, ZF_Y))
 
-## Clean HOURS/MIN
-tripTable$H_START[tripTable$ID_IND=="92101061_01" & tripTable$nd=="3"] <- 12
-tripTable$M_END[tripTable$ID_IND=="77031801_01" & tripTable$NDEP=="4"] <- 35
-tripTable$M_START[tripTable$ID_IND=="77162041_02" & tripTable$NDEP=="5"] <- 55
-tripTable$M_START[tripTable$ID_IND=="94082751_01" & tripTable$NDEP=="2"] <- 20
-tripTable$M_END[tripTable$ID_IND=="94082751_01" & tripTable$NDEP=="2"] <- 40
-tripTable$M_START[tripTable$ID_IND=="94082751_01" & tripTable$NDEP=="3"] <- 40
-tripTable$M_END[tripTable$ID_IND=="94082751_02" & tripTable$NDEP=="1"] <- 22
-tripTable$M_END[tripTable$ID_IND=="94149031_03" & tripTable$NDEP=="2"] <- 30
-tripTable$M_END[tripTable$ID_IND=="75010351_02" & tripTable$NDEP=="5"] <- 50
-tripTable$H_START[tripTable$ID_IND=="75010351_02" & tripTable$NDEP=="5"] <- 20
-tripTable$M_END[tripTable$ID_IND=="91010181_01" & tripTable$NDEP=="12"] <- 38
-tripTable$M_END[tripTable$ID_IND=="91030061_02" & tripTable$NDEP=="1"] <- 10
-tripTable$M_END[tripTable$ID_IND=="91030061_02" & tripTable$NDEP=="2"] <- 15
-tripTable$M_START[tripTable$ID_IND=="91111081_02" & tripTable$NDEP=="3"] <- 25
-tripTable$M_START[tripTable$ID_IND=="92042571_01" & tripTable$NDEP=="3"] <- 56
-tripTable$H_START[tripTable$ID_IND=="92042571_01" & tripTable$NDEP=="3"] <- 17
-tripTable$M_END[tripTable$ID_IND=="92042571_01" & tripTable$NDEP=="3"] <- 0
-tripTable$M_END[tripTable$ID_IND=="93080411_02" & tripTable$NDEP=="1"] <- 10
-tripTable$M_END[tripTable$ID_IND=="95119011_01" & tripTable$NDEP=="3"] <- 35
-tripTable$M_END[tripTable$ID_IND=="95119011_01" & tripTable$NDEP=="6"] <- 40
-tripTable$M_END[tripTable$ID_IND=="78064531_01" & tripTable$NDEP=="1"] <- 35
-tripTable$M_END[tripTable$ID_IND=="75021881_01" & tripTable$NDEP=="1"] <- 52
-tripTable$M_END[tripTable$ID_IND=="94141931_01" & tripTable$NDEP=="1"] <- 19
-tripTable$M_END[tripTable$ID_IND=="75023351_02" & tripTable$NDEP=="5"] <- 35
-tripTable$M_END[tripTable$ID_IND=="78121661_02" & tripTable$NDEP=="2"] <- 35
-tripTable$M_END[tripTable$ID_IND=="95110451_01" & tripTable$NDEP=="4"] <- 45
-tripTable$M_END[tripTable$ID_IND=="75071051_01" & tripTable$NDEP=="1"] <- 26
-tripTable$M_END[tripTable$ID_IND=="75071051_03" & tripTable$NDEP=="1"] <- 26
-tripTable$M_END[tripTable$ID_IND=="75091411_01" & tripTable$NDEP=="4"] <- 10
-tripTable$M_START[tripTable$ID_IND=="77031281_01" & tripTable$NDEP=="3"] <- 10
-tripTable$M_START[tripTable$ID_IND=="77034281_01" & tripTable$NDEP=="2"] <- 45
-tripTable$M_END[tripTable$ID_IND=="77051031_02" & tripTable$NDEP=="5"] <- 35
-tripTable$M_END[tripTable$ID_IND=="77051031_04" & tripTable$NDEP=="5"] <- 35
-tripTable$M_END[tripTable$ID_IND=="78064131_01" & tripTable$NDEP=="6"] <- 45
-tripTable$M_END[tripTable$ID_IND=="78080401_01" & tripTable$NDEP=="1"] <- 15
-tripTable$M_END[tripTable$ID_IND=="91060171_02" & tripTable$NDEP=="4"] <- 30
-tripTable$M_END[tripTable$ID_IND=="91070561_01" & tripTable$NDEP=="1"] <- 27
-tripTable$M_END[tripTable$ID_IND=="91110931_01" & tripTable$NDEP=="3"] <- 32
-tripTable$M_END[tripTable$ID_IND=="91120941_02" & tripTable$NDEP=="5"] <- 40
-tripTable$M_END[tripTable$ID_IND=="91120941_03" & tripTable$NDEP=="6"] <- 40
-tripTable$M_END[tripTable$ID_IND=="91120941_04" & tripTable$NDEP=="3"] <- 40
-tripTable$M_START[tripTable$ID_IND=="92041641_01" & tripTable$NDEP=="2"] <- 35
-tripTable$M_END[tripTable$ID_IND=="93092571_02" & tripTable$NDEP=="1"] <- 30
-tripTable$M_END[tripTable$ID_IND=="93092571_02" & tripTable$NDEP=="5"] <- 25
-tripTable$M_END[tripTable$ID_IND=="93092571_02" & tripTable$NDEP=="6"] <- 35
-tripTable$M_END[tripTable$ID_IND=="93079011_05" & tripTable$NDEP=="2"] <- 15
-tripTable$M_END[tripTable$ID_IND=="94100941_01" & tripTable$NDEP=="3"] <- 40
-tripTable$M_END[tripTable$ID_IND=="94112341_01" & tripTable$NDEP=="1"] <- 45
-tripTable$M_END[tripTable$ID_IND=="94112341_01" & tripTable$NDEP=="10"] <- 35
-tripTable$M_END[tripTable$ID_IND=="95022791_01" & tripTable$NDEP=="4"] <- 5
-tripTable$M_END[tripTable$ID_IND=="95119011_01" & tripTable$NDEP=="3"] <- 35
-tripTable$M_END[tripTable$ID_IND=="94102151_02" & tripTable$NDEP=="5"] <- 11
-tripTable$M_END[tripTable$ID_IND=="75144461_01" & tripTable$NDEP=="1"] <- 34
-tripTable$M_END[tripTable$ID_IND=="77062821_01" & tripTable$NDEP=="1"] <- 40
-tripTable$M_END[tripTable$ID_IND=="94038131_01" & tripTable$NDEP=="2"] <- 34
-tripTable$M_END[tripTable$ID_IND=="94061141_02" & tripTable$NDEP=="2"] <- 8
-tripTable$M_END[tripTable$ID_IND=="92093041_01" & tripTable$NDEP=="2"] <- 35
-tripTable$M_END[tripTable$ID_IND=="75105181_01" & tripTable$NDEP=="3"] <- 50
-tripTable$M_END[tripTable$ID_IND=="77033941_01" & tripTable$NDEP=="1"] <- 30
-
-tripTable <- filter(tripTable, ID_IND != "93021901_01")
 
 # Build final trip table 
 tripTable <- dplyr::arrange(tripTable, ID_IND, NDEP)
 tripTable <- tripTable %>%
-  transmute(ID_IND, ID_ED, 
+  transmute(ID_IND, ID_ED, NDEP, 
             RES_ZF, RES_SEC, 
             O_ZF, O_ZF_X, O_ZF_Y, O_SEC, 
             D_ZF, D_ZF_X, D_ZF_Y, D_SEC,
             H_START, M_START, H_END, M_END,
             D9, O_PURPOSE, D_PURPOSE, MOD_ADH)
 
+
 ## Save final trip table
-save(tripTable, file = "scriptsr/data/H24_trip.RDS")
-write.csv2(tripTable, "scriptsr/data/H24_trip.csv", row.names = FALSE)
+save(tripTable, file = "~/H24/H24_Library/scriptsr/data/H24_trip.RDS")
+write.csv2(tripTable, "~/H24/H24_Library/scriptsr/data/H24_trip.csv", row.names = FALSE)
 
 
 ################# IND TABLE #######################
 
 # Load data
-load("data_egt/personnes_semaine.RData")
+load("~/H24/H24_Library/data_egt/personnes_semaine.RData")
 
   ##Clean ID carreau
   personnes_semaine$resc[personnes_semaine$resc=="641771g"] <- "641771G"
@@ -293,22 +234,27 @@ indTable <- indTable %>%
   mutate(SEX = sexe)
 
 ## age groups (KAGE) in three groups 
-## 1: 16-29 yrs.; 2: 30-59 yrs.; 3: 60 yrs. and more.
-## 0 : less than 16 yrs.
+## 1: 15-29 yrs.; 2: 30-59 yrs.; 3: 60 yrs. and more.
+## 0 : less than 15 yrs.
 indTable <- indTable %>% 
-  mutate(KAGE = case_when(as.numeric(age) >= 16 & as.numeric(age) <= 29 ~ 1,
+  mutate(KAGE = case_when(as.numeric(age) >= 15 & as.numeric(age) <= 29 ~ 1,
                           as.numeric(age) >= 30 & as.numeric(age) <= 59 ~ 2,
                           as.numeric(age) >= 60 ~ 3,
                           TRUE ~ 0))
 
-## education groups (KEDUC) in three groups
-## 1 : low (sans diplôme - BEPC; CEP; BEP/CAP) ; 2 : middle (Bac - Bac+2) ; 3 : up (> Bac+2)
+## education groups (KEDUC) in three groups - Attention ! Differences according to Origin-destination surveys
+## 1 : low (sans diplome - BEPC; CEP; BEP/CAP) ; 2 : middle (Bac - Bac+2) ; 3 : up (> Bac+2)
+## For people "at school" : 1 (low) if [0-17 yrs.] / 2 (middle) if [18-24 yrs.] / 3 (up) if [25 yrs. and more]
 indTable <- indTable %>% 
-  mutate(KEDUC = plyr::mapvalues(dipl, c("", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "93", "97", "90"), 
-                                c(NA, NA, 1, 1, 1, 2, 2, 3, 1, 2, 1, NA, NA, NA)))
 
+mutate(KEDUC = plyr::mapvalues(dipl, c("", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9"), 
+                                     c(NA,   1,  9,   1,   1,   1,   2,   2,   3,   1,   2)))
 
-## Ajout des centroides de ZF RESIDENCE
+indTable$KEDUC = ifelse (indTable$KEDUC==9 & indTable$age<18, 1,
+                                  ifelse (indTable$KEDUC==9 & indTable$age>=18 & indTable$age<25, 2,
+                                          ifelse (indTable$KEDUC==9 & indTable$age>=25, 3, indTable$KEDUC)))
+
+## Add centroids for residential areas
 indTable <- merge(indTable, zonefine, by.x="resc", by.y="CODE_ZF", all.x= TRUE)
 indTable$RES_ZF_X <- indTable$ZF_X
 indTable$RES_ZF_Y <- indTable$ZF_Y
@@ -322,8 +268,8 @@ indTable <- dplyr::arrange(indTable, ID_IND)
 indTable <- indTable %>%
   transmute(ID_IND, ID_ED, RES_ZF_CODE = resc, RES_SEC = ressect,
             RES_ZF_X, RES_ZF_Y,
-            SEX, AGE = as.numeric(age), KAGE, KEDUC, nondepl)
+            SEX, AGE = as.numeric(age), KAGE, KEDUC)
 
 ## Save final individual table
-save(indTable, file = "scriptsr/data/H24_ind.RDS")
-write.csv2(indTable, "scriptsr/data/H24_ind.csv", row.names = FALSE)
+save(indTable, file = "~/H24/H24_Library/scriptsr/data/H24_ind.RDS")
+write.csv2(indTable, "~/H24/H24_Library/scriptsr/data/H24_ind.csv", row.names = FALSE)

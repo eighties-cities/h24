@@ -3,8 +3,8 @@
 
 # Nantes area (EDGT 2015), France.
 # 
-# November 2019 - Julie Vallée, Aurelie Douet, Guillaume le Roux
-# Mobiliscope : https://mobiliscope.parisgeo.cnrs.fr
+# November 2020 - Julie Vallee, Aurelie Douet, Guillaume le Roux
+# cf. Mobiliscope : https://mobiliscope.cnrs.fr
 # ================================================================================#
 
 # Library
@@ -18,6 +18,7 @@ library(sf)
 library(readxl)
 
 ################# TRIP TABLE #######################
+setwd('~/H24/H24_Library')
 
 # Load data
 ## open-data : https://www.data.gouv.fr/fr/datasets/enquete-deplacements-en-loire-atlantique-2/
@@ -57,7 +58,6 @@ tripTable <- tripTable %>%
   select(-(X1))
 
 
-         
 # Create ID variables
 ## ID_IND : for every respondent combine ZFD, ECH & PER
 ## ID_ED : for every OD survey combine IDD4 (ville centre) & IDD3 (annee)
@@ -149,7 +149,7 @@ indTable <- indTable %>%
          ECH = substr(X1, 8, 11),
          PER = substr(X1, 12, 13),
          GP1 = NA,
-          STP = substr(X1, 2, 4),
+         STP = substr(X1, 2, 4),
          PENQ = substr(X1, 14, 14),
          P2 = substr(X1, 17, 17),
          P4 = substr(X1, 19, 20),
@@ -161,8 +161,7 @@ indTable <- indTable %>%
 
 # Select surveyed people (PENQ = 1) - 
 ## In phone surveys, only 1 or 2 members of households are surveyed
-## among surveyed people, select people with at least one trip (P25 = 1) and people who have stayed at home (P25 =2)
-indTable <- filter(indTable, PENQ == "1" & P25 == "1" | P25 == "2")
+indTable <- filter(indTable, PENQ == "1")
 
 ## Create ID variables
 ## Place-based variables (Code secteurs et ZF de longueur 3 et 6)
@@ -184,19 +183,24 @@ indTable <- indTable %>%
   mutate(SEX = P2)
 
 ## age groups (KAGE) in three groups 
-## 1: 16-29 yrs.; 2: 30-59 yrs.; 3: 60 yrs. and more.
-## 0 if less than 16 yrs.
+## 1: 15-29 yrs.; 2: 30-59 yrs.; 3: 60 yrs. and more.
+## 0 if less than 15 yrs.
 indTable <- indTable %>% 
-    mutate(KAGE = case_when(as.numeric(P4) >= 16 & as.numeric(P4) <= 29 ~ 1,
+    mutate(KAGE = case_when(as.numeric(P4) >= 15 & as.numeric(P4) <= 29 ~ 1,
                             as.numeric(P4) >= 30 & as.numeric(P4) <= 59 ~ 2,
                             as.numeric(P4) >= 60 ~ 3,
                            TRUE ~ 0))
 
-## education groups (KEDUC) in three groups
-## 1 : low (sans diplôme - BEPC; CEP; BEP/CAP) ; 2 : middle (Bac - Bac+2) ; 3 : up (> Bac+2)
+## education groups (KEDUC) in three groups - Attention ! Differences according to Origin-destination surveys
+## 1 : low (sans diplome - BEPC; CEP; BEP/CAP) ; 2 : middle (Bac - Bac+2) ; 3 : up (> Bac+2)
+## For people "at school" : 1 (low) if [0-17 yrs.] / 2 (middle) if [18-24 yrs.] / 3 (up) if [25 yrs. and more]
 indTable <- indTable %>% 
-  mutate(KEDUC = plyr::mapvalues(P8, c("", "00", "01", "02", "03", "04", "05", "06", "07", "08", "09", "93", "97", "90"), 
-                                    c(NA, NA, 1, 1, 1, 2, 2, 3, 1, 2, 1, NA, NA, NA)))
+  mutate(KEDUC = plyr::mapvalues(P8, c("", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "93", "97", "90"), 
+                                    c(NA,   9,   1,   1,   1,   2,   2,   3,   1,   2,   1,   NA,   NA,   NA)))
+
+indTable$KEDUC = ifelse (indTable$KEDUC==9 & indTable$P4<18, 1,
+                         ifelse (indTable$KEDUC==9 & indTable$P4>=18 & indTable$P4<25, 2,
+                                 ifelse (indTable$KEDUC==9 & indTable$P4>=25, 3, indTable$KEDUC)))
 
 # Add centroids of residential area (ZF)
 indTable <- merge(indTable, zonefine, by.x="ZFP", by.y="CODE_ZF", all.x= TRUE)

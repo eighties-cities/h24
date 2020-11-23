@@ -108,25 +108,25 @@ Whatever the region, you should get two tables: H24_trip.csv & H24_ind.csv
 Secondly, run the generate_location.R script (located in src/main/R) 
 You should get location table (H24_location.csv) with location of every respondent around the clock
 
+Notes
+- Initial trip dataset is limited to weekday trips. We considered weekday trips as occurring an “average working day” (Monday to Friday)
+- We kept trips occurring between 4:00 am (day before survey) and 3:59 am (day of survey) and removed trips outside this window.
+- In the location table, transportation periods were removed.
+- In the location table, respondents who reported staying at home all day (whatever the reason) were assigned to their place of residence over the entire observation period.
+
 Location attributes
 - ZF_X & ZF_Y: coordinates: X Y – centroids of the area – projection L93
 - CODE_ZF: ID of the area
 - HEURE_DEB &  HEURE_FIN: start & end time (hh:mn)
 - DUREE: duration (in minutes)
 - MOTIF: home (1) ; work (2) ; study (3) ; shopping (4) ; leasure (5) ; others (6)
-		
+
 Respondent attributes
 - RES_ZF_X &  RES_ZF_Y: coordinates X Y – centroids of the residential area – projection L93
 - RES_ZF_CODE: ID of the residential area
 - SEX: Male (1); Female (2)
-- KAGE: Age in groups. 5-15 yrs (0); 16-29 yrs (1); 30-59 yrs (2); 60 yrs. and more (3)
-- KEDUC: Educational level in groups. Low (sans diplôme - BEPC; CEP; BEP/CAP) (1) ; Middle (Bac-Bac+2) (2) ; Up (>Bac+2) (3)
-
-Notes
-- Our dataset is restricted to weekday trips. We considered weekday trips as occurring an “average working day” (Monday to Friday)
-- We kept trips occurring between 4:00 am (day before survey) and 3:59 am (day of survey) and removed trips outside this window.
-- Transportation periods were removed, except if respondents have reported to use an 'adherent' mode of transportation (ie. walking or cycling). In this case, half of the trip was considered as located in the origin area and the other half as located in the destination area.
-- Respondents who reported staying at home all day were assigned to their place of residence over the entire observation period.
+- KAGE: Age in groups. 5-14 yrs (0); 15-29 yrs (1); 30-59 yrs (2); 60 yrs. and more (3)
+- KEDUC: Educational level in groups (from their last achieved qualification). Low (no diploma - BEPC; CEP; BEP/CAP) (1) ; Middle (Bac-Bac+2) (2) ; Up (>Bac+2) (3). For respondents still at school, we defined their education level from their age : low for students less than 18 yrs.; middle for students between 18 and 24 yrs.; up for students aged 25 or more.
 
 You can also directly download resulting location tables (in InputODData folder)
 - for Île-de-France (EGT 2010): H24_location_ParisRegion_noID.csv

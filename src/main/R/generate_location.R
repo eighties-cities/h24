@@ -3,8 +3,8 @@
 
 # Valid for every French city region
 
-# November 2019 - Julie Vallée, Aurelie Douet, Guillaume le Roux
-# Mobiliscope : https://mobiliscope.parisgeo.cnrs.fr
+# November 2020 - Julie Vallee, Aurelie Douet, Guillaume le Roux
+# cf. Mobiliscope : https://mobiliscope.cnrs.fr
 # ================================================================================#
 
 # Chargement des bibliotheques
@@ -26,8 +26,8 @@ library(geosphere)
 
 # Load trip table and individual table
 
-indTable <- read_delim("scriptsr/data/H24_ind.csv",";", escape_double = FALSE, trim_ws = TRUE)
-tripTable <- read_delim("scriptsr/data/H24_trip.csv",";", escape_double = FALSE, trim_ws = TRUE)
+indTable <- read_delim("~/H24/H24_Library/scriptsr/data/H24_ind.csv",";", escape_double = FALSE, trim_ws = TRUE)
+tripTable <- read_delim("~/H24/H24_Library/scriptsr/data/H24_trip.csv",";", escape_double = FALSE, trim_ws = TRUE)
 
 # Reframe hours/minutes variables
 
@@ -509,20 +509,12 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
   
   prezTable <-rbind(prezTable_1, prezTable_2, prezTable_3, prezTable_4, prezTable_5, prezTable_6, prezTable_7, prezTable_8)
   
-  ## Individuals without trips (at home during the 24h period) ## nondepl only available in EGT 2010
-  if("nondepl" %in% names (indTable))
-    {
-      prezNonDepl <- anti_join(x = select(indTable, ID_IND, ID_ED, CODE_ZF = RES_ZF_CODE, CODE_SEC = RES_SEC, ZF_X=RES_ZF_X, ZF_Y=RES_ZF_Y , nondepl=nondepl), y = prezTable, by = "ID_IND")
-      prezNonDepl <- filter(prezNonDepl, prezNonDepl$nondepl>1 & prezNonDepl$nondepl<=7)
-    }else{
-      prezNonDepl <- anti_join(x = select(indTable, ID_IND, ID_ED, CODE_ZF = RES_ZF_CODE, CODE_SEC = RES_SEC, ZF_X=RES_ZF_X, ZF_Y=RES_ZF_Y ), y = prezTable, by = "ID_IND")
-    }
-  
+  ## Individuals without trips (stay at home during the 24h period)
+  prezNonDepl <- anti_join(x = select(indTable, ID_IND, ID_ED, CODE_ZF = RES_ZF_CODE, CODE_SEC = RES_SEC, ZF_X=RES_ZF_X, ZF_Y=RES_ZF_Y ), y = prezTable, by = "ID_IND")
   prezNonDepl <- prezNonDepl %>% 
   transmute(ID_IND, ID_ED, ID_ORDRE = 1, CODE_ZF, CODE_SEC, ZF_X, ZF_Y, HEURE_DEB = as.character.Date(ISOdatetime(2010,1,1,4,0,0)), HEURE_FIN = as.character.Date(ISOdatetime(2010,1,2,4,0,0)),
            DUREE = 24*60, MOTIF = 1)
 
- 
   ### Combine the two locations tables (with and without trips during the 24h period)
     prezTable <-rbind(prezTable, prezNonDepl)
     prezTable <- dplyr::arrange(prezTable, ID_IND, HEURE_DEB)
@@ -547,9 +539,9 @@ tripTable_GRP <- merge(x = tripTable_GRP, y = nobs, by = "ID_IND", all =  TRUE)
   
   
 # Save final location table
-save(prezTable, file = "scriptsr/data/H24_location.RDS")
+save(prezTable, file = "~/H24/H24_Library/scriptsr/data/H24_location.RDS")
   
-write.csv2(prezTable, "scriptsr/data/H24_location.csv", row.names = FALSE)
+write.csv2(prezTable, "~/H24/H24_Library/scriptsr/data/H24_location.csv", row.names = FALSE)
 
 
 # Build final location table without ID
@@ -561,6 +553,6 @@ prezTable_noID <- prezTable %>%
             SEX, KAGE, KEDUC)
 
 # Save final location table with no ID
-save(prezTable_noID, file = "scriptsr/data/H24_location_noID.RDS")
+save(prezTable_noID, file = "~/H24/H24_Library/scriptsr/data/H24_location_noID.RDS")
 
-write.csv2(prezTable_noID, "scriptsr/data/H24_location_noID.csv", row.names = FALSE)
+write.csv2(prezTable_noID, "~/H24/H24_Library/scriptsr/data/H24_location_noID.csv", row.names = FALSE)
