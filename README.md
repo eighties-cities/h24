@@ -122,6 +122,7 @@ Respondent attributes
 - RES_ZF_X &  RES_ZF_Y: coordinates X Y – centroids of the residential area – projection L93
 - RES_ZF_CODE: ID of the residential area
 - SEX: Male (1); Female (2)
+- AGE: in years
 - KAGE: Age in groups. 5-14 yrs (0); 15-29 yrs (1); 30-59 yrs (2); 60 yrs. and more (3)
 - KEDUC: Educational level in groups (from their last achieved qualification). Low (no diploma - BEPC; CEP; BEP/CAP) (1) ; Middle (Bac-Bac+2) (2) ; Up (>Bac+2) (3). 
 For respondents still at school, we defined their education level from their age : low for students less than 18 yrs.; middle for students between 18 and 24 yrs.; up for students aged 25 or more.
