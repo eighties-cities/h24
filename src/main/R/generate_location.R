@@ -530,7 +530,7 @@ prezTable_noID <- prezTable %>%
             HEURE_DEB, HEURE_FIN, DUREE,
             MOTIF,
             RES_ZF_CODE, RES_ZF_X, RES_ZF_Y, 
-            SEX, KAGE, KEDUC)
+            SEX, AGE, KAGE, KEDUC)
 
 # Save final location table with no ID
 save(prezTable_noID, file = "~/H24/H24_Library/scriptsr/data/H24_location_noID.RDS")
