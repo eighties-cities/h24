@@ -140,8 +140,8 @@ You can also directly download resulting location tables (in InputODData folder)
 For Île-de-France (note we added a JVM option to give more memory to the process):
 ```shell script
 unzip InputODData/H24_location_noID_ParisRegion.zip -d prepared_data_IDF/
-lzma -f prepared_data_IDF/H24_location_noID.csv
-sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID.csv.lzma -s EPSG:27572 -p results_IDF/population.bin -m results_IDF/moves.bin"
+lzma -f prepared_data_IDF/H24_location_noID_ParisRegion.csv
+sbt -J-Xmx4G "runMain eighties.h24.tools.MoveMatrixGenerator -e prepared_data_IDF/H24_location_noID_ParisRegion.csv -s EPSG:27572 -p results_IDF/population.bin -m results_IDF/moves.bin"
 ```
 For Loire-Atlantique (note we added a JVM option to give more memory to the process):
 ```shell script
