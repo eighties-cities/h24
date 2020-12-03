@@ -129,8 +129,11 @@ object PopulationInBuildingsGenerator extends App {
             val relevantBuildings = buildings.query(geom.getEnvelopeInternal).toArray.map(_.asInstanceOf[(MultiPolygon, String, Double)]).filter(_._1.intersects(geom))
             val relevantCellsAreaBuildingVolumes = relevantBuildings.map { building => ((building._1, building._2), building._3) }.filter { case (_, v) => v > 0 }
             val sampledCells = if (relevantCellsAreaBuildingVolumes.isEmpty) {
-              // if no building with proper volume, sample uniformly in all cells intersecting
-              relevantBuildings.map { building => ((building._1, building._2), 1.0) }
+              // if no building, sample uniformly in iris
+              if (relevantBuildings.isEmpty) {
+                Array(((geom, ""), 1.0))
+                // if no building with proper volume, sample uniformly in all cells intersecting
+              } else relevantBuildings.map { building => ((building._1, building._2), 1.0) }
             } else relevantCellsAreaBuildingVolumes
             sampleIris(age10V, ageSexV, schoolAgeV, educationSexV, rnd) map { sample =>
               def building = multinomial(sampledCells)(rnd)
