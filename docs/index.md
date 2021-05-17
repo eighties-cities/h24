@@ -2,11 +2,11 @@
 
 Le site web peut aggréger : 
 
-    - la doc du code source (ici)
-    - la doc html généré depuis un script R/RMarkdown
-    - etc.
+  - la doc et les principes un peu expliqué du code source d'h24 (ici)
+  - un exemple tutorial (déjà écrit par julien) 
+  - etc.
 
-Pour la doc du code source, c'est un work in progress :factory_worker: à partir des infos déjà écrites ici https://hackmd.io/IGeOfl9yQmmkekJzgTClMA?both 
+Pour la doc du code source, c'est un *work in progress* :factory_worker: à partir des infos déjà écrites [ici](https://hackmd.io/IGeOfl9yQmmkekJzgTClMA?both)
 
 Pour les infos de compil, voir la page about
 
