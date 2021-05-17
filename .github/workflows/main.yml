@@ -15,4 +15,4 @@ jobs:
       - run: pip install mkdocs-material
       - run: git clone https://github.com/fschaeck/PythonSed.git
       - run: cd PythonSed && pip install .
-      - run: cd h24 && mkdocs gh-deploy --force
+      - run: mkdocs gh-deploy --force
