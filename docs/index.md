@@ -1,17 +1,9 @@
-# Welcome to MkDocs
+# H24 code documentation
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+!!! note "info editeur"
 
-## Commands
-
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
-
-## Project layout
-
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+    - Pour modifier les options et la navigation, tout est dans le .yml
+    - Utilisation de macro (macro.py) https://github.com/fralau/mkdocs_macros_plugin#macros-and-filters, j'ai utiliser pythonsed pour extraite les lignes ... c'est moche mais ca marche pour le moment.
+    - Plugins pour mkdocs, voir [la doc de mkdocs](https://squidfunk.github.io/mkdocs-material/reference/abbreviations/)  : inlinehilite, highlight, emoji
+    - Pour écrire du code inline, par exemple, en python : `#!python range()` est la méthode qui sert à générer des séquences.
+    - Pour écrire des bouts de code, voir dans workflow.md pour la fonction `code_from_file(...)`  

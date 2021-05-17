@@ -13,4 +13,6 @@ jobs:
         with:
           python-version: 3.x
       - run: pip install mkdocs-material
-      - run: mkdocs gh-deploy --force
+      - run: git clone https://github.com/fschaeck/PythonSed.git
+      - run: cd PythonSed && pip install .
+      - run: cd && mkdocs gh-deploy --force
