@@ -1,7 +1,8 @@
 # H24 code documentation
 
-!!! note "info editeur"
+En local le site se déploie bien, mais il y a un souci en ligne.
 
+!!! note "info editeur"
     - Pour modifier les options et la navigation, tout est dans le .yml
     - Utilisation de macro (macro.py) https://github.com/fralau/mkdocs_macros_plugin#macros-and-filters, j'ai utiliser pythonsed pour extraite les lignes ... c'est moche mais ca marche pour le moment.
     - Plugins pour mkdocs, voir [la doc de mkdocs](https://squidfunk.github.io/mkdocs-material/reference/abbreviations/)  : inlinehilite, highlight, emoji
