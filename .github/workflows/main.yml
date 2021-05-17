@@ -17,4 +17,5 @@ jobs:
       - run: pip install pymdown-extensions
       - run: git clone https://github.com/fschaeck/PythonSed.git
       - run: cd PythonSed && pip install .
-      - run: mkdocs gh-deploy --force
+      - run: cat ../h24/mkdocs.yml
+      - run: cd ../h24/ && mkdocs gh-deploy --force
