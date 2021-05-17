@@ -1,4 +1,5 @@
 site_name: H24 Documentation
+site_url: https://eighties-cities.github.io/h24/
 theme:
   name: material
 plugins:
