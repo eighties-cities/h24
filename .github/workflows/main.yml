@@ -13,7 +13,8 @@ jobs:
         with:
           python-version: 3.x
       - run: pip install mkdocs-material
+      - run: pip install mkdocs-macros-plugin
+      - run: pip install pymdown-extensions
       - run: git clone https://github.com/fschaeck/PythonSed.git
       - run: cd PythonSed && pip install .
-      - run: pip install mkdocs-macros-plugin
       - run: mkdocs gh-deploy --force
