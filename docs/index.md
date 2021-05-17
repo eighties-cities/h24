@@ -1,10 +1,17 @@
-# H24 code documentation
+# H24 documentation
 
-En local le site se déploie bien, mais il y a un souci en ligne.
+Le site web peut aggréger : 
+- la doc du code source (ici)
+- la doc html généré depuis un script R/RMarkdown
+- etc.
+
+Pour la doc du code source, c'est un work in progress :factory_worker: à partir des infos déjà écrites ici https://hackmd.io/IGeOfl9yQmmkekJzgTClMA?both 
+
+Pour les infos de compil, voir la page about
 
 !!! note "info editeur"
-    - Pour modifier les options et la navigation, tout est dans le .yml
-    - Utilisation de macro (macro.py) https://github.com/fralau/mkdocs_macros_plugin#macros-and-filters, j'ai utiliser pythonsed pour extraite les lignes ... c'est moche mais ca marche pour le moment.
-    - Plugins pour mkdocs, voir [la doc de mkdocs](https://squidfunk.github.io/mkdocs-material/reference/abbreviations/)  : inlinehilite, highlight, emoji
-    - Pour écrire du code inline, par exemple, en python : `#!python range()` est la méthode qui sert à générer des séquences.
-    - Pour écrire des bouts de code, voir dans workflow.md pour la fonction `code_from_file(...)`  
+
+    - Pour modifier les options et la navigation du site, tout est dans le `../mkdocs.yml`
+    - Pour écrire du code source "inline", par exemple, en python : `#!python range()` est la méthode qui sert à générer des séquences.
+    - Pour écrire des bouts de code, voir dans workflow.md pour la fonction `code_from_file(...)` 
+    - Pour les infobox, les icones/emoji, etc. voir la [documentation](https://squidfunk.github.io/mkdocs-material/reference/admonitions/)
