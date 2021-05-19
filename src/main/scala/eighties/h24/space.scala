@@ -28,20 +28,10 @@ object space {
     def fromIndex(i: Short): (Int, Int) = {
       val x = (i.toInt - Short.MinValue.toInt) / byteRange
       val y = (i.toInt - Short.MinValue.toInt) - (x.toInt * byteRange)
-//      println(s"$i => (${x - Byte.MinValue}, ${y - Byte.MinValue})")
-      //(x - Byte.MinValue, y - Byte.MinValue)
       (x, y)
     }
 
-    def toIndex(l: Location): Short = {
-      val r = (l._1 * byteRange + l._2 + Short.MinValue).toShort
-      if (fromIndex(r)._1 != l._1 || fromIndex(r)._2 != l._2) {
-        println(s"$l => $r")
-        println(s"$r => ${fromIndex(r)}")
-      }
-//      ((l._1 + Byte.MinValue) * byteRange + (l._2 + Byte.MinValue)).toShort
-      r
-    }
+    def toIndex(l: Location): Short = (l._1 * byteRange + l._2 + Short.MinValue).toShort
 
     lazy val indexIso: Iso[Short, (Int, Int)] = monocle.Iso[Short, Location](fromIndex)(toIndex)
 
