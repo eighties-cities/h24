@@ -43,6 +43,7 @@ object SimpleGridExample extends App {
 
   Log.log(Calendar.getInstance.getTime.toString + " Relocating population")
 
+  val gridSize = 1000 // FIXME I just had to put something
   val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
   def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox))
   val relocatedFeatures = features.map(relocate)
@@ -50,7 +51,7 @@ object SimpleGridExample extends App {
   Log.log(Calendar.getInstance.getTime.toString + " Saving population")
   val boundingBox = BoundingBox[IndividualFeature](relocatedFeatures, _.location)
   WorldFeature.save(
-    WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, 1000),
+    WorldFeature(relocatedFeatures, originalBoundingBox, boundingBox, gridSize),
     //    File("results/population.bin")
     File("results/SimpleGrid10.bin").toJava
   )

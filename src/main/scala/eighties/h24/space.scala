@@ -24,17 +24,18 @@ object space {
 
     def apply(i:Int, j:Int): (Int, Int) = (i,j)
 
+    val byteRange: Int = Byte.MaxValue - Byte.MinValue
     def fromIndex(i: Short): (Int, Int) = {
-      val x = i / Byte.MaxValue
-      val y = i - (x * Byte.MaxValue)
-      (x, y)
+      val x = i.toInt / byteRange
+      val y = i.toInt - (x.toInt * byteRange)
+      (x - Byte.MinValue, y - Byte.MinValue)
     }
 
-    def toIndex(l: Location): ShortAggregatedSocialCategory = (l._1 * Byte.MaxValue + l._2).toShort
+    def toIndex(l: Location): Short = ((l._1 + Byte.MinValue) * byteRange + (l._2 + Byte.MinValue)).toShort
 
-    lazy val indexIso: Iso[ShortAggregatedSocialCategory, (Int, Int)] = monocle.Iso[Short, Location](fromIndex)(toIndex)
+    lazy val indexIso: Iso[Short, (Int, Int)] = monocle.Iso[Short, Location](fromIndex)(toIndex)
 
-    def noLocationIndex: ShortAggregatedSocialCategory = Short.MaxValue
+    def noLocationIndex: Short = Short.MaxValue
   }
 
   /* définition d'un voisinage*/

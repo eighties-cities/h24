@@ -313,7 +313,7 @@ object  generation {
     val transform = CRS.findMathTransform(inCRS, outCRS, true)
     // the zipWithIndex is only useful for debug so we might want to remove it at some point...
     irises.zipWithIndex.map { case (id: AreaID, index: Int) =>
-      if ((index % 1000) == 0) Log.log(s"$index")
+      // if ((index % 1000) == 0) Log.log(s"$index")
       // we use getOrElse to handle the absence of an IRIS in the INSEE database
       val age10V = age10.getOrElse(id, Vector())
       val ageSexV = ageSex.getOrElse(id, Vector())

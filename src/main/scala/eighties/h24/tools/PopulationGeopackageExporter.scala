@@ -1,14 +1,8 @@
 package eighties.h24.tools
 
-import java.io.{File => JFile}
-import java.util
 import eighties.h24.generation._
-import eighties.h24.social.AggregatedSocialCategory.shortAggregatedSocialCategoryIso
 import eighties.h24.social.{Age, AggregatedSocialCategory, Education}
-import eighties.h24.space
-import eighties.h24.space.{Location, generateWorld}
-import monocle.PLens
-import monocle.macros.Lenses
+import eighties.h24.space.Index
 import org.geotools.data.{DataUtilities, DefaultTransaction}
 import org.geotools.geometry.jts.{Geometries, ReferencedEnvelope}
 import org.geotools.geopkg.FeatureEntry
@@ -16,7 +10,9 @@ import org.geotools.referencing.CRS
 import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import scopt.OParser
 
-import scala.util.Random
+import java.io.{File => JFile}
+import java.util
+import scala.collection.mutable.ArrayBuffer
 
 object PopulationGeopackageExporter extends App {
   case class Config(
@@ -48,8 +44,13 @@ object PopulationGeopackageExporter extends App {
     case Some(config) =>
       Log.log("load features")
       val res = WorldFeature.load(config.population.get)
-      val bbox = res.originalBoundingBox
+      val obbox = res.originalBoundingBox
+      val bbox = res.boundingBox
       val gridSize = res.gridSize
+      Log.log(s"obboxI ${obbox.minI} ${obbox.maxI} ${obbox.sideI}")
+      Log.log(s"obboxJ ${obbox.minJ} ${obbox.maxJ} ${obbox.sideJ}")
+      Log.log(s"bboxI ${bbox.minI} ${bbox.maxI} ${bbox.sideI}")
+      Log.log(s"bboxJ ${bbox.minJ} ${bbox.maxJ} ${bbox.sideJ}")
       val outFile = config.output.get
       outFile.getParentFile.mkdirs()
       val params = new util.HashMap[String, Object]()
@@ -86,8 +87,8 @@ object PopulationGeopackageExporter extends App {
       val geometryType = featureType.getGeometryDescriptor.getType
       val gType = Geometries.getForName (geometryType.getName.getLocalPart)
       entry.setGeometryType (gType)
-      val referencedEnvelope = new ReferencedEnvelope(bbox.minI, bbox.maxI+gridSize, bbox.minJ, bbox.maxJ+gridSize, CRS.decode("EPSG:3035"))
-      Log.log(s"bbox ${bbox.minI} - ${bbox.minJ} - $gridSize")
+      val referencedEnvelope = new ReferencedEnvelope(obbox.minI, obbox.maxI+gridSize, obbox.minJ, obbox.maxJ+gridSize, CRS.decode("EPSG:3035"))
+      Log.log(s"obbox ${obbox.minI} - ${obbox.minJ} - $gridSize")
       entry.setBounds(referencedEnvelope)
       Log.log("create featureentry")
       geopkg.create(entry, featureType)
@@ -96,25 +97,23 @@ object PopulationGeopackageExporter extends App {
       val writer = geopkg.writer(entry,true, null, transaction)
       Log.log("Let's go")
       if (config.cellExport) {
-        @Lenses case class Individual(socialCategory: AggregatedSocialCategory, home: Short)
-        def homeV: PLens[Individual, Individual, (Int, Int), (Int, Int)] = Individual.home composeIso space.Location.indexIso
-        def buildIndividual(feature: IndividualFeature, random: Random) =
-          Individual(AggregatedSocialCategory(feature),Location.toIndex(feature.location))
-        def world = generateWorld(res.individualFeatures, buildIndividual, homeV, homeV, new util.Random(42))
-        val index = space.Index.indexIndividuals(world, homeV.get)
-        def getValue(individual: Individual) = individual.socialCategory
-        val mappedValues = index.cells.map(_.map(individuals => if (individuals.nonEmpty)
-          {
-            val categories = individuals.map(getValue)
-            Some(AggregatedSocialCategory.all.map(cat=>categories.count(c=> c == cat)))
+        val mappedValues = {
+          val cellBuffer: Array[Array[ArrayBuffer[Byte]]] = Array.fill(bbox.sideI, bbox.sideJ) { ArrayBuffer[Byte]() }
+          for {
+            s <- res.individualFeatures
+            (i, j) = s.location
+          } cellBuffer(i)(j) += AggregatedSocialCategory.shortAggregatedSocialCategoryIso(AggregatedSocialCategory(s))
+          Index[Byte](cellBuffer.map(_.map(_.toArray)), bbox.sideI, bbox.sideJ)
+        }.cells.map(_.map(categories => if (categories.nonEmpty) {
+            Some(AggregatedSocialCategory.all.map(cat=>categories.count(c=> c == AggregatedSocialCategory.shortAggregatedSocialCategoryIso(cat))))
           } else None))
         for {
           (l, i) <- mappedValues.zipWithIndex
           (valueOption, j) <- l.zipWithIndex
           if valueOption.isDefined
         } {
-          val ii = bbox.minI + i * gridSize
-          val jj = bbox.minJ + j * gridSize
+          val ii = obbox.minI + i * gridSize
+          val jj = obbox.minJ + j * gridSize
           val value = valueOption.get
           val (p0, p1, p2, p3)  = (new Coordinate(ii, jj), new Coordinate(ii+gridSize, jj), new Coordinate(ii+gridSize, jj+gridSize), new Coordinate(ii, jj+gridSize))
           def polygon = geometryFactory.createPolygon(Array(p0,p1,p2,p3,p0))
@@ -130,7 +129,7 @@ object PopulationGeopackageExporter extends App {
         } {
           if (index % 100000 == 0) Log.log(s"$index")
           import feature._
-          def point = geometryFactory.createPoint(new Coordinate(bbox.minI + location._1.toDouble * gridSize + gridSize / 2, bbox.minJ + location._2.toDouble * gridSize + gridSize / 2))
+          def point = geometryFactory.createPoint(new Coordinate(obbox.minI + location._1.toDouble * gridSize + gridSize / 2, obbox.minJ + location._2.toDouble * gridSize + gridSize / 2))
 
           val values = Array[AnyRef](
             point,

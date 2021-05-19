@@ -42,6 +42,7 @@ object simulation {
     days: Int,
     world: () => space.World[I],
     bbox: BoundingBox,
+    gridSize: Int,
     locatedCell: LocatedCell,
     moveType: MoveType,
     exchange: (World[I], Int, Int, Random) => World[I],
@@ -50,10 +51,10 @@ object simulation {
     home: I => Location,
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None): World[I] = {
+    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] = {
 
 
-    @tailrec def simulateOneDay(world: space.World[I], bb: BoundingBox, timeSlices: List[TimeSlice], locatedCell: LocatedCell, day: Int, slice: Int = 0): World[I] = {
+    @tailrec def simulateOneDay(world: space.World[I], bb: BoundingBox, gridSize: Int, timeSlices: List[TimeSlice], locatedCell: LocatedCell, day: Int, slice: Int = 0): World[I] = {
         timeSlices match {
           case Nil => world
           case time :: t =>
@@ -64,19 +65,19 @@ object simulation {
             }
 
             val convicted = exchange(moved, day, slice, rng)
-            visitor.foreach(_(convicted, bb, Some((day, slice))))
-            simulateOneDay(convicted, bb, t, locatedCell, day, slice + 1)
+            visitor.foreach(_(convicted, bb, gridSize, Some((day, slice))))
+            simulateOneDay(convicted, bb, gridSize, t, locatedCell, day, slice + 1)
         }
       }
 
     // Ensures the world is not retained in memory
     var currentWorld = world()
-    visitor.foreach(_(currentWorld, bbox, None))
+    visitor.foreach(_(currentWorld, bbox, gridSize, None))
 
     for {
       day <- 0 until days
     } {
-      currentWorld = simulateOneDay(currentWorld, bbox, timeSlices.toList, locatedCell, day)
+      currentWorld = simulateOneDay(currentWorld, bbox, gridSize, timeSlices.toList, locatedCell, day)
     }
 
     currentWorld
@@ -94,11 +95,11 @@ object simulation {
     home: Lens[I, Location],
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Option[(Int, Int)]) => Unit] = None): World[I] = {
+    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] = {
 
     def worldFeature = WorldFeature.load(population)
     val bbox = worldFeature.originalBoundingBox
-
+    val gridSize = worldFeature.gridSize
     val moveMatrix = MoveMatrix.load(moves)
 
     try {
@@ -122,6 +123,7 @@ object simulation {
         days = days,
         world = () => populationWithMoves,
         bbox = bbox,
+        gridSize = gridSize,
         locatedCell = locatedCell,
         moveType = moveType,
         exchange = exchange,
