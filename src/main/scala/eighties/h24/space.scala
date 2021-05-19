@@ -26,12 +26,22 @@ object space {
 
     val byteRange: Int = Byte.MaxValue - Byte.MinValue
     def fromIndex(i: Short): (Int, Int) = {
-      val x = i.toInt / byteRange
-      val y = i.toInt - (x.toInt * byteRange)
-      (x - Byte.MinValue, y - Byte.MinValue)
+      val x = (i.toInt - Short.MinValue.toInt) / byteRange
+      val y = (i.toInt - Short.MinValue.toInt) - (x.toInt * byteRange)
+//      println(s"$i => (${x - Byte.MinValue}, ${y - Byte.MinValue})")
+      //(x - Byte.MinValue, y - Byte.MinValue)
+      (x, y)
     }
 
-    def toIndex(l: Location): Short = ((l._1 + Byte.MinValue) * byteRange + (l._2 + Byte.MinValue)).toShort
+    def toIndex(l: Location): Short = {
+      val r = (l._1 * byteRange + l._2 + Short.MinValue).toShort
+      if (fromIndex(r)._1 != l._1 || fromIndex(r)._2 != l._2) {
+        println(s"$l => $r")
+        println(s"$r => ${fromIndex(r)}")
+      }
+//      ((l._1 + Byte.MinValue) * byteRange + (l._2 + Byte.MinValue)).toShort
+      r
+    }
 
     lazy val indexIso: Iso[Short, (Int, Int)] = monocle.Iso[Short, Location](fromIndex)(toIndex)
 
@@ -87,7 +97,7 @@ object space {
 
     def apply[I: ClassTag](individuals: Array[I], location: Lens[I, Location], home: Lens[I, Location], attractions: Array[Attraction]): World[I] = {
       val boundingBox = BoundingBox(individuals, location.get)
-
+      println(s"boundingBox = (${boundingBox.minI} - ${boundingBox.minJ}) (${boundingBox.sideI} - ${boundingBox.sideJ})")
       def relocate =
         home.modify(BoundingBox.translate(boundingBox)) andThen// TODO: add Scale?
           location.modify(BoundingBox.translate(boundingBox))// TODO: add Scale?

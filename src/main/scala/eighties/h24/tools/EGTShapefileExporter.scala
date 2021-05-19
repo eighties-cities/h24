@@ -56,7 +56,7 @@ object EGTShapefileExporter extends App {
       opt[Boolean]('d', "destination")
         .required()
         .action((x, c) => c.copy(destination = Some(x)))
-        .text("path of the move file"),
+        .text("true exports the destination, false the origin"),
       opt[File]('o', "output")
         .required()
         .action((x, c) => c.copy(output = Some(x)))
