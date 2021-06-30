@@ -566,7 +566,7 @@ object  generation {
     }
   }
 
-  case class Flow(timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
+  case class Flow(timeSlice: TimeSlice, sex:Sex, age:Age, education:AggregatedEducation, activity: space.Location, residence: space.Location)
 
   def readFlowsFromEGT(aFile: File, location: Coordinate=>space.Location, slices: Vector[TimeSlice]): Try[List[Flow]] =
     withCSVReader(aFile)(SemicolonFormat){ reader =>
@@ -589,10 +589,13 @@ object  generation {
           d1.equalsIgnoreCase("NA") || d2.equalsIgnoreCase("NA"))
       }.flatMap { line =>
         def format(date:String) = {
-          val formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+//          val formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+          val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
           Try{new DateTime(formatter.parse(date))} match {
             case Success(d) => d.toInstant
-            case Failure(_) => new DateTime(new SimpleDateFormat("dd-MM-yyyy").parse(date)).toInstant
+            case Failure(_) =>
+              println(s"Failure for $date")
+              new DateTime(new SimpleDateFormat("dd-MM-yyyy").parse(date)).toInstant
           }
         }
         //val formatter = new SimpleDateFormat("dd/MM/yy hh:mm")
@@ -606,19 +609,24 @@ object  generation {
         //FIXME
         val age = Age.parse(getAge(line)).get
         val dipl = Try{getEduc(line) match {
-          case 0 => Education.Dipl0
-          case 1 => Education.Schol
-          case 2 => Education.BEPC
-          case 3 => Education.BEPC
-          case 4 => Education.CAPBEP
-          case 5 => Education.BAC
-          case 6 => Education.BACP2
-          case 7 => Education.SUP
-          case 8 => Education.BAC
-          case 9 => Education.BAC
+//          case 0 => Education.Dipl0
+//          case 1 => Education.Schol
+//          case 2 => Education.BEPC
+//          case 3 => Education.BEPC
+//          case 4 => Education.CAPBEP
+//          case 5 => Education.BAC
+//          case 6 => Education.BACP2
+//          case 7 => Education.SUP
+//          case 8 => Education.BAC
+//          case 9 => Education.BAC
+          case 1 => AggregatedEducation.Low
+          case 2 => AggregatedEducation.Middle
+          case 3 => AggregatedEducation.High
         }} match {
           case Success(e)=>e
-          case Failure(_) => Education.Dipl0
+          case Failure(_) =>
+            println(s"Failure for ${line("KEDUC")}")
+            AggregatedEducation.Low//Education.Dipl0
         }
         val point_x = pX(line).replaceAll(",",".").toDouble
         val point_y = pY(line).trim.replaceAll(",",".").toDouble
@@ -633,7 +641,7 @@ object  generation {
 //          if(date_start.isBefore(midnight) && date_end.isAfter(midnight)) Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), 24 * 60), TimeSlice(0, date_end.get(DateTimeFieldType.minuteOfDay())))
 //          else Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), date_end.get(DateTimeFieldType.minuteOfDay())))
 
-        timeSlices.map(s => Flow(s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
+        timeSlices.map(s => Flow(s, sex, age, dipl, location(new Coordinate(point_x,point_y)), location(new Coordinate(res_x,res_y))))
       }.filter(_.age.from >= 15)
     }
   }
@@ -649,7 +657,8 @@ object  generation {
     if(intersection <= 0.0) c
     else {
       // category of the flow
-      val cat = AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
+      val cat = new AggregatedSocialCategory(age = AggregatedAge(flow.age), sex = flow.sex, education = flow.education)
+      //AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
       c.get(cat) match {
         case Some(moves) =>
           // get the index of the flow destination (activity) in the moves
@@ -750,8 +759,8 @@ object  generation {
     def location(coord: Coordinate): space.Location = {
       val laea_coord = JTS.transform(coord, null, transform)
       // replace by cell...
-      val dx = laea_coord.x - originalBoundingBox.minI// * 1000
-      val dy = laea_coord.y - originalBoundingBox.minJ// * 1000
+      def dx = laea_coord.x - originalBoundingBox.minI
+      def dy = laea_coord.y - originalBoundingBox.minJ
       space.cell((dx, dy), gridSize)
     }
 
@@ -777,7 +786,7 @@ object  generation {
     def getMovesFromOppositeSex(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
         val moves = c.get(cat)
-        def noSex = c.find { case (sc, _) => AggregatedSocialCategory.age.get(sc) == AggregatedSocialCategory.age.get(cat) && sc.education == cat.education }.map(_._2)
+        def noSex = c.find { case (sc, _) => sc.age == cat.age && sc.education == cat.education }.map(_._2)
         (moves orElse noSex) map (m => cat -> m)
       }.toMap
 
