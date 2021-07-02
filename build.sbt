@@ -4,9 +4,9 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "2.13.5"
+scalaVersion := "2.13.6"
 
-crossScalaVersions := Seq("2.12.12", "2.13.5")
+crossScalaVersions := Seq("2.13.6")
 
 val monocleVersion = "2.0.1"
 
@@ -20,7 +20,6 @@ resolvers ++= Seq(
   "geotoolkit" at "https://maven.geotoolkit.org/",
   "Boundless" at "https://repo.boundlessgeo.com/main"
 )
-
 
 libraryDependencies ++= Seq (
   "org.mapdb" % "mapdb" % "3.0.8",
@@ -51,53 +50,10 @@ libraryDependencies ++= Seq (
   "javax.media" % "jai-core" % "1.1.3" from "https://repo.osgeo.org/repository/release/javax/media/jai_core/1.1.3/jai_core-1.1.3.jar",
   "javax.media" % "jai_codec" % "1.1.3",
   "javax.media" % "jai_imageio" % "1.1",
-  "org.apache.poi" % "poi-ooxml"  % "4.1.1",
-  //"org.scala-lang.modules" %% "scala-collection-compat" % "2.1.3"
+  "org.apache.poi" % "poi-ooxml"  % "4.1.1"
 )
  
-//addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+
+scalacOptions ++= Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
 
 
-scalacOptions ++= {
-  scalaBinaryVersion.value match {
-    case x if x.startsWith("2.12") => Seq("-target:jvm-1.8")
-    case _ => Seq("-target:jvm-1.8", "-language:postfixOps", "-Ymacro-annotations")
-  }
-}
-
-libraryDependencies ++= {
-  scalaBinaryVersion.value match {
-    case x if x.startsWith("2.12") => Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
-    case _ => Seq()
-  }
-}
-
-/*enablePlugins(SbtOsgi)
-
-//updateOptions := updateOptions.value.withGigahorse(false)
-
-osgiSettings
-
-OsgiKeys.exportPackage := Seq("eighties.*;-split-package:=merge-first")
-
-OsgiKeys.importPackage := Seq("*;resolution:=optional")
-
-OsgiKeys.privatePackage := Seq("!scala.*,!java.*,*")
-
-OsgiKeys.requireCapability := """osgi.ee; osgi.ee="JavaSE";version:List="1.8,1.9""""
-
-OsgiKeys.additionalHeaders :=  Map(
-  "Specification-Title" -> "Spec Title",
-  "Specification-Version" -> "Spec Version",
-  "Specification-Vendor" -> "Eighties",
-  "Implementation-Title" -> "Impl Title",
-  "Implementation-Version" -> "Impl Version",
-  "Implementation-Vendor" -> "Eighties"
-)
-
-OsgiKeys.embeddedJars := (Keys.externalDependencyClasspath in Compile).value map (_.data) filter (f=> (f.getName startsWith "gt-"))
-
-*/
-
-// do not use coursier at the moment: it fails on jai_core for some reason
-//useCoursier := false
