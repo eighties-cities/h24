@@ -7,9 +7,9 @@ import eighties.h24.social._
 import space.{Attraction, Index, Location, World}
 import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice}
 import monocle.function.all.index
-import monocle.macros.Lenses
 import monocle.{Lens, Traversal}
 import tools.random._
+import monocle._
 
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -70,7 +70,7 @@ object dynamic {
     def split(t: TimeSlice, timeSlices: Vector[TimeSlice]) = timeSlices.toArray.flatMap(extract(t))
 
     object Move {
-      def location = Move.locationIndex composeIso Location.indexIso
+      def location = Focus[Move](_.locationIndex) composeIso Location.indexIso
       def apply(location: Location, ratio: Float) = new Move(Location.toIndex(location), ratio)
     }
 
@@ -91,7 +91,7 @@ object dynamic {
     type Cell = Map[AggregatedSocialCategory, Array[Move]]
 
     type LocatedCell = (TimeSlice, Int, Int) => Cell
-    @Lenses case class Move(locationIndex: Short, ratio: Float)
+    case class Move(locationIndex: Short, ratio: Float)
 
     def cellName(t: TimeSlice, i: Int, j: Int) = s"${t.from}-${t.to}_${i}_$j"
 
@@ -148,15 +148,15 @@ object dynamic {
       } yield l -> c
 
     def location = MoveMatrix.Move.location
-    def moveRatio = MoveMatrix.Move.ratio
+    def moveRatio = Focus[MoveMatrix.Move](_.ratio)
 
     def noMove(i: Int, j: Int) =
       Vector.tabulate(i, j) {(ii, jj) => AggregatedSocialCategory.all.map { c => c -> Vector((ii, jj) -> 1.0) }.toMap }
 
     import boopickle.Default._
 
-    implicit val categoryPickler = transformPickler((i: Int) => SocialCategory.all(i))(s => SocialCategory.all.indexOf(s))
-    implicit val aggregatedCategoryPickler = transformPickler((i: Int) => AggregatedSocialCategory.all(i))(s => AggregatedSocialCategory.all.indexOf(s))
+    implicit val categoryPickler: Pickler[SocialCategory] = transformPickler((i: Int) => SocialCategory.all(i))(s => SocialCategory.all.indexOf(s))
+    implicit val aggregatedCategoryPickler: Pickler[AggregatedSocialCategory] = transformPickler((i: Int) => AggregatedSocialCategory.all(i))(s => AggregatedSocialCategory.all.indexOf(s))
 //
 //    def save(moves: MoveMatrix, file: File) = {
 //      val os = new FileOutputStream(file.toJava)
@@ -237,13 +237,13 @@ object dynamic {
     //val cellMoves = moves(location._1)(location._2)
     val aggregatedCategory = socialCategory(individual)
     def myCategory = cellMoves.get(aggregatedCategory)
-    def noSex = cellMoves.find { case(c, _) => AggregatedSocialCategory.age.get(c) == AggregatedSocialCategory.age.get(aggregatedCategory) && c.education == aggregatedCategory.education }.map(_._2)
+    def noSex = cellMoves.find { case(c, _) => Focus[AggregatedSocialCategory](_.age).get(c) == Focus[AggregatedSocialCategory](_.age).get(aggregatedCategory) && c.education == aggregatedCategory.education }.map(_._2)
     myCategory orElse noSex
   }
 
   def sampleDestinationInMoveMatrix[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory, random: Random) =
     moveFlowDefaultOnOtherSex(cellMoves, individual, socialCategory).flatMap { m =>
-      if(m.isEmpty) None else Some(multinomial(m.map{ m => MoveMatrix.Move.location.get(m) -> MoveMatrix.Move.ratio.get(m).toDouble })(random))
+      if(m.isEmpty) None else Some(multinomial(m.map{ m => MoveMatrix.Move.location.get(m) -> Focus[MoveMatrix.Move](_.ratio).get(m).toDouble })(random))
     }
 
   def stableLocationOrMove[I](individual: I, timeSlice: TimeSlice, stableDestinations: I => Map[TimeSlice, Location], location: Lens[I, Location], move: I => I) =
@@ -263,7 +263,7 @@ object dynamic {
     var index = 0
 
     for {
-      (line, i) <- Index.cells.get(Index.indexIndividuals(world, home)).zipWithIndex
+      (line, i) <- Focus[Index[I]](_.cells).get(Index.indexIndividuals(world, home)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
     } {
       lazy val cell = locatedCell(timeSlice, i, j)
@@ -275,7 +275,7 @@ object dynamic {
       }
     }
 
-    World.individuals[I].set(newIndividuals)(world)
+    Focus[World[I]](_.individuals).set(newIndividuals)(world)
   }
 
   def assignRandomDayLocation[I: ClassTag](world: World[I], locatedCell: LocatedCell, stableDestination: Lens[I, Map[TimeSlice, Location]], location: I => Location, home: I => Location, socialCategory: I => AggregatedSocialCategory, rng: Random) = {
@@ -283,7 +283,7 @@ object dynamic {
     var index = 0
 
     for {
-      (line, i) <- Index.cells.get(Index.indexIndividuals(world, location)).zipWithIndex
+      (line, i) <- Focus[Index[I]](_.cells).get(Index.indexIndividuals(world, location)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
     } {
       val workTimeMovesFromCell = locatedCell(dayTimeSlice, i, j)
@@ -303,7 +303,7 @@ object dynamic {
       }
     }
 
-    World.individuals.set(newIndividuals)(world)
+    Focus[World[I]](_.individuals).set(newIndividuals)(world)
   }
 
   def assignFixNightLocation[I: ClassTag](world: World[I], stableDestination: Lens[I, Map[TimeSlice, Location]], home: I => Location) =
@@ -329,7 +329,7 @@ object dynamic {
     }
 
     def attractions = (0 until (reach.size * proportion).toInt).map(_ => attraction)
-    World.attractions.set(attractions.toArray)(world)
+    Focus[World[I]](_.attractions).set(attractions.toArray)(world)
   }
 
   def logistic(l: Double, k: Double, x0: Double)(x: Double) = l / (1.0 +  math.exp(-k * (x - x0)))

@@ -5,6 +5,7 @@ import java.util.Calendar
 import better.files.File
 import eighties.h24.generation._
 import eighties.h24.space.BoundingBox
+import monocle._
 
 object SimpleGridExample extends App {
 
@@ -44,8 +45,8 @@ object SimpleGridExample extends App {
   Log.log(Calendar.getInstance.getTime.toString + " Relocating population")
 
   val gridSize = 1000 // FIXME I just had to put something
-  val originalBoundingBox = BoundingBox(features, IndividualFeature.location.get)
-  def relocate = IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox))
+  val originalBoundingBox = BoundingBox(features, Focus[IndividualFeature](_.location).get)
+  def relocate = Focus[IndividualFeature](_.location).modify(BoundingBox.translate(originalBoundingBox))
   val relocatedFeatures = features.map(relocate)
 
   Log.log(Calendar.getInstance.getTime.toString + " Saving population")

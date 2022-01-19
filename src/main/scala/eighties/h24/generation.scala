@@ -12,7 +12,6 @@ import eighties.h24.social._
 import eighties.h24.tools.Log
 import space.{BoundingBox, Location}
 import eighties.h24.tools.random._
-import monocle.macros.Lenses
 import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream
 import org.geotools.data.shapefile.ShapefileDataStore
 import org.geotools.geometry.jts.{JTS, JTSFactoryFinder}
@@ -24,6 +23,7 @@ import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 import org.opengis.referencing.operation.MathTransform
 import scalaz.Memo
+import monocle._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -68,10 +68,10 @@ object  generation {
     }
   }
 
-  @Lenses case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int)
+  case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int)
 
 
-  @Lenses case class IndividualFeature(
+  case class IndividualFeature(
     ageCategory: Int,
     sex: Int,
     education: Int,
@@ -155,8 +155,7 @@ object  generation {
 
 
   def readGeometry(shapeData:ShapeData, filter: String => Boolean): Try[(Seq[AreaID],AreaID => Option[MultiPolygon])] = {
-    def aggregated(geometry: Map[AreaID, MultiPolygon]): AreaID => Option[MultiPolygon] = Memo.mutableHashMapMemo {
-      id: AreaID =>
+    def aggregated(geometry: Map[AreaID, MultiPolygon]): AreaID => Option[MultiPolygon] = Memo.mutableHashMapMemo { (id: AreaID) =>
       geometry.get(id) match {
         case Some(mp) => Some(mp)
         case None =>
@@ -218,7 +217,7 @@ object  generation {
     }
   }
 
-  def mainActivityLocationFromMobilityFlows(workFile: File, studyFile: File, geometry: AreaID => Option[MultiPolygon]): AreaID => (Boolean, Random) => Option[Point] = scalaz.Memo.mutableHashMapMemo { commune: AreaID =>
+  def mainActivityLocationFromMobilityFlows(workFile: File, studyFile: File, geometry: AreaID => Option[MultiPolygon]): AreaID => (Boolean, Random) => Option[Point] = scalaz.Memo.mutableHashMapMemo { (commune: AreaID) =>
     val workFlows = readMobilityFlows(workFile)(commune).get.toArray
     val studyFlows = readMobilityFlows(studyFile)(commune).get.toArray
     (work: Boolean, rng: Random) => {
@@ -666,7 +665,7 @@ object  generation {
           if (index == -1) c + (cat -> (moves :+ Move(flow.activity, intersection.toFloat)))
           else {
             // since the cell already contains flows for this location, just add the flow contribution
-            val v = MoveMatrix.Move.ratio.get(moves(index))
+            val v = Focus[MoveMatrix.Move](_.ratio).get(moves(index))
             c + (cat -> moves.updated(index, Move(flow.activity, v + intersection.toFloat)))
           }
         case None =>
@@ -677,8 +676,8 @@ object  generation {
 
   def normalizeFlows(c: Cell): Cell =
     c.map { case (category, moves) =>
-      val total = moves.map(Move.ratio.get).sum
-      category -> moves.map { Move.ratio.modify(_ / total) }
+      val total = moves.map(Focus[Move](_.ratio).get).sum
+      category -> moves.map { Focus[Move](_.ratio).modify(_ / total) }
     }
 
 //  def addFlowToMatrix(slices: TimeSlices, flow: Flow): TimeSlices =
@@ -700,7 +699,7 @@ object  generation {
       destinationsIndex.map { di =>
         val v = for {
           n <- neighborhood
-          value <- n._2.filter(m => m.locationIndex == di).map(Move.ratio.get)
+          value <- n._2.filter(m => m.locationIndex == di).map(Focus[Move](_.ratio).get)
         } yield (n._1, value)
 
         val values =
@@ -723,7 +722,7 @@ object  generation {
     val movesByCat = movesInNeighborhoodByCategory(location, index)
     AggregatedSocialCategory.all.map {
       category =>
-        def moves = c.getOrElse(category, Array())
+        def moves = c.getOrElse(category, Array[Move]())
         def m =
           for {
             (l, c) <- movesByCat

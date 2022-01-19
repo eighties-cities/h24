@@ -32,6 +32,7 @@ import org.locationtech.jts.geom.Coordinate
 import scopt._
 
 import scala.jdk.CollectionConverters.MapHasAsScala
+import com.github.tototoshi.csv.defaultCSVFormat
 
 /**
  */
