@@ -22,19 +22,28 @@ import scala.util.Random
 object random {
 
   class Multinomial[T](values: List[(T, Double)]) {
-    @tailrec private def multinomial0(values: List[(T, Double)])(draw: Double): T = {
-      values match {
-        case Nil => throw new RuntimeException("List should never be empty.")
-        case (bs, _) :: Nil => bs
-        case (bs, weight) :: tail =>
-          if (draw <= weight) bs
-          else multinomial0(tail)(draw - weight)
+    lazy val sum = values.map(_._2).sum
+
+    lazy val cdf = {
+      var sum = 0.0
+      var previousSum = 0.0
+      val cdf = Array.ofDim[Double](values.length + 1)
+
+      for {
+        i <- values.indices
+      } {
+        sum = previousSum + values(i)._2
+        cdf(i + 1) = sum
+        previousSum = sum
       }
+
+      cdf
     }
-    val max: Double =  values.map(_._2).sum
+
     def draw(implicit random: Random): T = {
-      val drawn = random.nextDouble() * max
-      multinomial0(values)(drawn)
+      val drawn = random.nextDouble() * sum
+      val drawnIndex = cdf.search(drawn)
+      values(drawnIndex.insertionPoint - 1)._1
     }
   }
 
@@ -50,25 +59,7 @@ object random {
       s(random.nextInt(size))
     }
   }
-
-
-  def multinomial[T](values: Array[(T, Double)])(implicit random: Random): T = {
-    var sum = 0.0
-    var previousSum = 0.0
-    val cdf = Array.ofDim[Double](values.length + 1)
-
-    for {
-      i <- values.indices
-    } {
-      sum = previousSum + values(i)._2
-      cdf(i + 1) = sum
-      previousSum = sum
-    }
-
-    val drawn = random.nextDouble() * sum
-    val drawnIndex = cdf.search(drawn)
-
-    values(drawnIndex.insertionPoint - 1)._1
-  }
+  
+  def multinomial[T](values: Array[(T, Double)])(implicit random: Random): T = new Multinomial[T](values.toList).draw(random)
 
 }
