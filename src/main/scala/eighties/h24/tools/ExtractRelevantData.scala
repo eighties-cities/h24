@@ -15,6 +15,7 @@ import org.opengis.feature.simple.SimpleFeature
 import scopt.OParser
 
 import scala.util.Try
+import com.github.tototoshi.csv.defaultCSVFormat
 
 object ExtractRelevantData extends App {
   case class Config(

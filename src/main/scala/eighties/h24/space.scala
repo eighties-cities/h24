@@ -101,7 +101,7 @@ object space {
         boundingBox.sideJ)
     }
 
-    def individualsVector[I: ClassTag]: PLens[World[I], World[I], Vector[I], Vector[I]] = World.individuals[I] composeLens arrayToVector[I]
+    def individualsVector[I: ClassTag]: PLens[World[I], World[I], Vector[I], Vector[I]] = Focus[World[I]](_.individuals) composeLens arrayToVector[I]
     def allIndividuals[I: ClassTag]: PTraversal[World[I], World[I], I, I] = individualsVector[I] composeTraversal each
 
   }
@@ -110,16 +110,16 @@ object space {
   //def array2ToVectorLens[A: Manifest] = monocle.Lens[Array[Array[A]], Vector[Vector[A]]](_.toVector.map(_.toVector))(v => _ => v.map(_.toArray).toArray)
 
   /* Définition d'une classe Grid, composé de vecteurs, de edges et de side*/
-  @Lenses case class World[I](individuals: Array[I], attractions: Array[Attraction], originI: Int, originJ: Int, sideI: Int, sideJ: Int)
-  @Lenses case class Attraction(location: Location, education: AggregatedEducation)
+  case class World[I](individuals: Array[I], attractions: Array[Attraction], originI: Int, originJ: Int, sideI: Int, sideJ: Int)
+  case class Attraction(location: Location, education: AggregatedEducation)
 
   object Index {
 
     def indexIndividuals[I: ClassTag](world: World[I], location: I => Location): Index[I] =
-      Index[I](World.individuals.get(world).iterator, location, world.sideI, world.sideJ)
+      Index[I](Focus[World[I]](_.individuals).get(world).iterator, location, world.sideI, world.sideJ)
 
     def indexAttraction[I](world: World[I]): Index[Attraction] =
-      Index[Attraction](World.attractions.get(world).iterator, Attraction.location.get(_), world.sideI, world.sideJ)
+      Index[Attraction](Focus[World[I]](_.attractions).get(world).iterator, Focus[Attraction](_.location).get(_), world.sideI, world.sideJ)
 
     def apply[T: ClassTag](content: Iterator[T], location: T => Location, sideI: Int, sideJ: Int): Index[T] = {
       val cellBuffer: Array[Array[ArrayBuffer[T]]] = Array.fill(sideI, sideJ) { ArrayBuffer[T]() }
@@ -138,11 +138,11 @@ object space {
         (c, j) <- l.zipWithIndex
       } yield (c, Location(i, j))
 
-    def allCells[T: ClassTag]: PTraversal[Index[T], Index[T], Vector[T], Vector[T]] = cells[T] composeIso arrayVectorIso[Array[Array[T]]] composeTraversal each composeIso arrayVectorIso[Array[T]] composeTraversal each composeIso arrayVectorIso[T]
+    def allCells[T: ClassTag]: PTraversal[Index[T], Index[T], Vector[T], Vector[T]] = Focus[Index[T]](_.cells) composeIso arrayVectorIso[Array[Array[T]]] composeTraversal each composeIso arrayVectorIso[Array[T]] composeTraversal each composeIso arrayVectorIso[T]
     def allIndividuals[T: ClassTag]: PTraversal[Index[T], Index[T], T, T] = allCells[T] composeTraversal each
   }
 
-  @Lenses case class Index[T](cells: Array[Array[Array[T]]], sideI: Int, sideJ: Int)
+  case class Index[T](cells: Array[Array[Array[T]]], sideI: Int, sideJ: Int)
 
   def generateWorld[I: ClassTag](
     features: Array[IndividualFeature],

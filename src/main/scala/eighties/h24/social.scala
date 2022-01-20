@@ -1,8 +1,7 @@
 package eighties.h24
 
 import eighties.h24.generation._
-import monocle.{Iso, PLens}
-import monocle.macros.Lenses
+import monocle._
 
 /*
  * Copyright (C) 2019 Romain Reuillon
@@ -220,7 +219,7 @@ object social {
 
   }
 
-  @Lenses case class SocialCategory(age: Age, sex: Sex, education: Education)
+  case class SocialCategory(age: Age, sex: Sex, education: Education)
 
 
   object AggregatedSocialCategory {
@@ -248,14 +247,14 @@ object social {
         AggregatedEducation.toCode(aggregatedSocialCategory.education))
 
 
-    def ageValue: PLens[AggregatedAge, AggregatedAge, AggregatedAge, AggregatedAge] = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.age
-    def sexValue: PLens[AggregatedAge, AggregatedAge, Sex, Sex] = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.sex
-    def educationValue: PLens[AggregatedAge, AggregatedAge, AggregatedEducation, AggregatedEducation] = shortAggregatedSocialCategoryIso composeLens AggregatedSocialCategory.education
+    def ageValue: PLens[AggregatedAge, AggregatedAge, AggregatedAge, AggregatedAge] = shortAggregatedSocialCategoryIso composeLens Focus[AggregatedSocialCategory](_.age)
+    def sexValue: PLens[AggregatedAge, AggregatedAge, Sex, Sex] = shortAggregatedSocialCategoryIso composeLens Focus[AggregatedSocialCategory](_.sex)
+    def educationValue: PLens[AggregatedAge, AggregatedAge, AggregatedEducation, AggregatedEducation] = shortAggregatedSocialCategoryIso composeLens Focus[AggregatedSocialCategory](_.education)
     def shortAggregatedSocialCategoryIso: Iso[AggregatedAge, AggregatedSocialCategory] = monocle.Iso[Byte, AggregatedSocialCategory](i => all(i.toInt - Byte.MinValue))(c => (all.indexOf(c) + Byte.MinValue).toByte)
   }
 
 
-  @Lenses case class AggregatedSocialCategory(
+  case class AggregatedSocialCategory(
     age: AggregatedAge,
     sex: Sex,
     education: AggregatedEducation)

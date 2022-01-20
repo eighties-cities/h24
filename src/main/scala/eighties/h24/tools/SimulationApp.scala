@@ -10,7 +10,7 @@ import eighties.h24.simulation._
 import eighties.h24.social.AggregatedSocialCategory
 import eighties.h24.space.{BoundingBox, Index, Location, World}
 import monocle.function.all._
-import monocle.macros.Lenses
+import monocle._
 import org.geotools.coverage.grid.GridCoverageFactory
 import org.geotools.gce.geotiff.GeoTiffFormat
 import org.geotools.geometry.jts.ReferencedEnvelope
@@ -49,9 +49,9 @@ object SimulationApp extends App {
 
     def arrayMapIso = monocle.Iso[Array[(TimeSlice, Int)], Map[TimeSlice, Int]](_.toMap)(_.toArray)
 
-    def locationV = Individual.location composeIso Location.indexIso
-    def homeV = Individual.home composeIso Location.indexIso
-    def socialCategoryV = Individual.socialCategory composeIso AggregatedSocialCategory.shortAggregatedSocialCategoryIso
+    def locationV = Focus[Individual](_.location) composeIso Location.indexIso
+    def homeV = Focus[Individual](_.home) composeIso Location.indexIso
+    def socialCategoryV = Focus[Individual](_.socialCategory) composeIso AggregatedSocialCategory.shortAggregatedSocialCategoryIso
 
     def arrayToMapOfStableLocation(array: Array[Short]) =
       (timeSlices zip array).filter(_._2 != Location.noLocationIndex).map{ case (a, b) => a -> Location.fromIndex(b) }.toMap
@@ -61,16 +61,16 @@ object SimulationApp extends App {
     def timeSlicesMapIso =
       monocle.Iso[Array[Short], Map[TimeSlice, Location]] (arrayToMapOfStableLocation) (mapOfStableLocationToArray)
 
-    def stableDestinationsV = Individual.stableDestinations composeIso timeSlicesMapIso
+    def stableDestinationsV = Focus[Individual](_.stableDestinations) composeIso timeSlicesMapIso
 
-    def education = socialCategoryV composeLens AggregatedSocialCategory.education
-    def age = socialCategoryV composeLens AggregatedSocialCategory.age
-    def sex = socialCategoryV composeLens AggregatedSocialCategory.sex
+    def education = socialCategoryV composeLens Focus[AggregatedSocialCategory](_.education)
+    def age = socialCategoryV composeLens Focus[AggregatedSocialCategory](_.age)
+    def sex = socialCategoryV composeLens Focus[AggregatedSocialCategory](_.sex)
     def i = Individual.locationV composeLens first
     def j = Individual.locationV composeLens second
   }
 
-  @Lenses case class Individual(
+  case class Individual(
     socialCategory: Byte,
     home: Short,
     location: Short,

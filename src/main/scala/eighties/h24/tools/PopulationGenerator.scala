@@ -5,6 +5,7 @@ import eighties.h24.generation._
 import eighties.h24.space._
 import scopt.OParser
 import Log._
+import monocle._
 
 /**
  * Generate a synthetic population.
@@ -78,9 +79,9 @@ object PopulationGenerator extends App {
       log("Generating population")
       val gridSize = config.gridSize.get
       def relocateFeatures(f: Array[IndividualFeature]) = {
-        val originalBoundingBox = BoundingBox(f, IndividualFeature.location.get)
+        val originalBoundingBox = BoundingBox(f, Focus[IndividualFeature](_.location).get)
         log("Relocating population")
-        (f.map(IndividualFeature.location.modify(BoundingBox.translate(originalBoundingBox)) andThen IndividualFeature.location.modify(scale(gridSize))), originalBoundingBox)
+        (f.map(Focus[IndividualFeature](_.location).modify(BoundingBox.translate(originalBoundingBox)) andThen Focus[IndividualFeature](_.location).modify(scale(gridSize))), originalBoundingBox)
       }
 
       if (config.randomPop.get) log("Random population") else log("Observed population")
@@ -105,7 +106,7 @@ object PopulationGenerator extends App {
       config.output.get.getParentFile.mkdirs()
 
       def createWorldFeature(f: Array[IndividualFeature], obb: BoundingBox) = {
-        WorldFeature(f, obb, BoundingBox(f, IndividualFeature.location.get), gridSize)
+        WorldFeature(f, obb, BoundingBox(f, Focus[IndividualFeature](_.location).get), gridSize)
       }
       WorldFeature.save(
         createWorldFeature(relocatedFeatures, originalBoundingBox),

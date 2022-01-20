@@ -12,7 +12,6 @@ import eighties.h24.social._
 import eighties.h24.tools.Log
 import space.{BoundingBox, Location}
 import eighties.h24.tools.random._
-import monocle.macros.Lenses
 import org.apache.commons.compress.compressors.lzma.LZMACompressorInputStream
 import org.geotools.data.shapefile.ShapefileDataStore
 import org.geotools.geometry.jts.{JTS, JTSFactoryFinder}
@@ -24,6 +23,7 @@ import org.locationtech.jts.triangulate.ConformingDelaunayTriangulationBuilder
 import org.opengis.referencing.crs.CoordinateReferenceSystem
 import org.opengis.referencing.operation.MathTransform
 import scalaz.Memo
+import monocle._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
@@ -68,10 +68,10 @@ object  generation {
     }
   }
 
-  @Lenses case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int)
+  case class WorldFeature(individualFeatures: Array[IndividualFeature], originalBoundingBox: BoundingBox, boundingBox: BoundingBox, gridSize: Int)
 
 
-  @Lenses case class IndividualFeature(
+  case class IndividualFeature(
     ageCategory: Int,
     sex: Int,
     education: Int,
@@ -155,8 +155,7 @@ object  generation {
 
 
   def readGeometry(shapeData:ShapeData, filter: String => Boolean): Try[(Seq[AreaID],AreaID => Option[MultiPolygon])] = {
-    def aggregated(geometry: Map[AreaID, MultiPolygon]): AreaID => Option[MultiPolygon] = Memo.mutableHashMapMemo {
-      id: AreaID =>
+    def aggregated(geometry: Map[AreaID, MultiPolygon]): AreaID => Option[MultiPolygon] = Memo.mutableHashMapMemo { (id: AreaID) =>
       geometry.get(id) match {
         case Some(mp) => Some(mp)
         case None =>
@@ -218,7 +217,7 @@ object  generation {
     }
   }
 
-  def mainActivityLocationFromMobilityFlows(workFile: File, studyFile: File, geometry: AreaID => Option[MultiPolygon]): AreaID => (Boolean, Random) => Option[Point] = scalaz.Memo.mutableHashMapMemo { commune: AreaID =>
+  def mainActivityLocationFromMobilityFlows(workFile: File, studyFile: File, geometry: AreaID => Option[MultiPolygon]): AreaID => (Boolean, Random) => Option[Point] = scalaz.Memo.mutableHashMapMemo { (commune: AreaID) =>
     val workFlows = readMobilityFlows(workFile)(commune).get.toArray
     val studyFlows = readMobilityFlows(studyFile)(commune).get.toArray
     (work: Boolean, rng: Random) => {
@@ -566,7 +565,7 @@ object  generation {
     }
   }
 
-  case class Flow(timeSlice: TimeSlice, sex:Sex, age:Age, education:Education, activity: space.Location, residence: space.Location)
+  case class Flow(timeSlice: TimeSlice, sex:Sex, age:Age, education:AggregatedEducation, activity: space.Location, residence: space.Location)
 
   def readFlowsFromEGT(aFile: File, location: Coordinate=>space.Location, slices: Vector[TimeSlice]): Try[List[Flow]] =
     withCSVReader(aFile)(SemicolonFormat){ reader =>
@@ -589,10 +588,13 @@ object  generation {
           d1.equalsIgnoreCase("NA") || d2.equalsIgnoreCase("NA"))
       }.flatMap { line =>
         def format(date:String) = {
-          val formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+//          val formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss")
+          val formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
           Try{new DateTime(formatter.parse(date))} match {
             case Success(d) => d.toInstant
-            case Failure(_) => new DateTime(new SimpleDateFormat("dd-MM-yyyy").parse(date)).toInstant
+            case Failure(_) =>
+              println(s"Failure for $date")
+              new DateTime(new SimpleDateFormat("dd-MM-yyyy").parse(date)).toInstant
           }
         }
         //val formatter = new SimpleDateFormat("dd/MM/yy hh:mm")
@@ -606,19 +608,24 @@ object  generation {
         //FIXME
         val age = Age.parse(getAge(line)).get
         val dipl = Try{getEduc(line) match {
-          case 0 => Education.Dipl0
-          case 1 => Education.Schol
-          case 2 => Education.BEPC
-          case 3 => Education.BEPC
-          case 4 => Education.CAPBEP
-          case 5 => Education.BAC
-          case 6 => Education.BACP2
-          case 7 => Education.SUP
-          case 8 => Education.BAC
-          case 9 => Education.BAC
+//          case 0 => Education.Dipl0
+//          case 1 => Education.Schol
+//          case 2 => Education.BEPC
+//          case 3 => Education.BEPC
+//          case 4 => Education.CAPBEP
+//          case 5 => Education.BAC
+//          case 6 => Education.BACP2
+//          case 7 => Education.SUP
+//          case 8 => Education.BAC
+//          case 9 => Education.BAC
+          case 1 => AggregatedEducation.Low
+          case 2 => AggregatedEducation.Middle
+          case 3 => AggregatedEducation.High
         }} match {
           case Success(e)=>e
-          case Failure(_) => Education.Dipl0
+          case Failure(_) =>
+            println(s"Failure for ${line("KEDUC")}")
+            AggregatedEducation.Low//Education.Dipl0
         }
         val point_x = pX(line).replaceAll(",",".").toDouble
         val point_y = pY(line).trim.replaceAll(",",".").toDouble
@@ -633,7 +640,7 @@ object  generation {
 //          if(date_start.isBefore(midnight) && date_end.isAfter(midnight)) Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), 24 * 60), TimeSlice(0, date_end.get(DateTimeFieldType.minuteOfDay())))
 //          else Array(TimeSlice(date_start.get(DateTimeFieldType.minuteOfDay()), date_end.get(DateTimeFieldType.minuteOfDay())))
 
-        timeSlices.map(s => Flow(s, sex, age, dipl, location(new Coordinate(point_x,point_y)),location(new Coordinate(res_x,res_y))))
+        timeSlices.map(s => Flow(s, sex, age, dipl, location(new Coordinate(point_x,point_y)), location(new Coordinate(res_x,res_y))))
       }.filter(_.age.from >= 15)
     }
   }
@@ -649,7 +656,8 @@ object  generation {
     if(intersection <= 0.0) c
     else {
       // category of the flow
-      val cat = AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
+      val cat = new AggregatedSocialCategory(age = AggregatedAge(flow.age), sex = flow.sex, education = flow.education)
+      //AggregatedSocialCategory(SocialCategory(age = flow.age, sex = flow.sex, education = flow.education))
       c.get(cat) match {
         case Some(moves) =>
           // get the index of the flow destination (activity) in the moves
@@ -657,7 +665,7 @@ object  generation {
           if (index == -1) c + (cat -> (moves :+ Move(flow.activity, intersection.toFloat)))
           else {
             // since the cell already contains flows for this location, just add the flow contribution
-            val v = MoveMatrix.Move.ratio.get(moves(index))
+            val v = Focus[MoveMatrix.Move](_.ratio).get(moves(index))
             c + (cat -> moves.updated(index, Move(flow.activity, v + intersection.toFloat)))
           }
         case None =>
@@ -668,8 +676,8 @@ object  generation {
 
   def normalizeFlows(c: Cell): Cell =
     c.map { case (category, moves) =>
-      val total = moves.map(Move.ratio.get).sum
-      category -> moves.map { Move.ratio.modify(_ / total) }
+      val total = moves.map(Focus[Move](_.ratio).get).sum
+      category -> moves.map { Focus[Move](_.ratio).modify(_ / total) }
     }
 
 //  def addFlowToMatrix(slices: TimeSlices, flow: Flow): TimeSlices =
@@ -691,7 +699,7 @@ object  generation {
       destinationsIndex.map { di =>
         val v = for {
           n <- neighborhood
-          value <- n._2.filter(m => m.locationIndex == di).map(Move.ratio.get)
+          value <- n._2.filter(m => m.locationIndex == di).map(Focus[Move](_.ratio).get)
         } yield (n._1, value)
 
         val values =
@@ -714,7 +722,7 @@ object  generation {
     val movesByCat = movesInNeighborhoodByCategory(location, index)
     AggregatedSocialCategory.all.map {
       category =>
-        def moves = c.getOrElse(category, Array())
+        def moves = c.getOrElse(category, Array[Move]())
         def m =
           for {
             (l, c) <- movesByCat
@@ -750,8 +758,8 @@ object  generation {
     def location(coord: Coordinate): space.Location = {
       val laea_coord = JTS.transform(coord, null, transform)
       // replace by cell...
-      val dx = laea_coord.x - originalBoundingBox.minI// * 1000
-      val dy = laea_coord.y - originalBoundingBox.minJ// * 1000
+      def dx = laea_coord.x - originalBoundingBox.minI
+      def dy = laea_coord.y - originalBoundingBox.minJ
       space.cell((dx, dy), gridSize)
     }
 
@@ -777,7 +785,7 @@ object  generation {
     def getMovesFromOppositeSex(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
         val moves = c.get(cat)
-        def noSex = c.find { case (sc, _) => AggregatedSocialCategory.age.get(sc) == AggregatedSocialCategory.age.get(cat) && sc.education == cat.education }.map(_._2)
+        def noSex = c.find { case (sc, _) => sc.age == cat.age && sc.education == cat.education }.map(_._2)
         (moves orElse noSex) map (m => cat -> m)
       }.toMap
 
