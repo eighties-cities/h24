@@ -55,5 +55,5 @@ libraryDependencies ++= Seq (
 
 excludeDependencies += ExclusionRule("org.typelevel", "cats-kernel_2.13")
 
-scalacOptions ++= Seq(/*"-release:11",*/ "-language:postfixOps")
+scalacOptions ++= Seq("-release:11", "-language:postfixOps")
 

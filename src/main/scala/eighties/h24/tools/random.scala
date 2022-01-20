@@ -59,7 +59,7 @@ object random {
       s(random.nextInt(size))
     }
   }
-
+  
   def multinomial[T](values: Array[(T, Double)])(implicit random: Random): T = new Multinomial[T](values.toList).draw(random)
 
 }
