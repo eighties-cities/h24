@@ -17,7 +17,9 @@ Initial distribution of population (`population.bin`) is generated using the `Po
 
 Given population density we build a matrix of cells.
 
-Next, the function `generatePopulationRandomly` use information about structure of population (age,sex,education) at the census block level (iris) to sample new population sized individuals using direct sampling algorithm.
+Next, the function `generation.generatePopulationRandomly` (generation.scala) use information about structure of population (age, sex, education) at the census block level (iris) to sample new population sized individuals using direct sampling algorithm.
+
+{{ code_from_file("../src/main/scala/eighties/h24/generation.scala", 74, 78, "scala") }}
 
 We don't consider the census block geometries, so we attribute for each individual (`IndividualFeature`) a random cell in a matrix of same size of the population raster grid. This random cell is taken using a multinomial to respect density of population.
 
