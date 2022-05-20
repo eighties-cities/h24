@@ -88,11 +88,12 @@ We use the same algorithm for the other `AggregatedCategory` in (b)
 
 ### Interpolate 
 
-ECG contain only a small parts of the real population. We use a simple IDW (Inverse Distance Weighting) interpolation to compute values for all cells that contain no moves.
+ECG contain only a small parts of the real population. We use a simple IDW (Inverse Distance Weighting) interpolation to compute values for all cells that contain actually no moves.
 
 ![move](./img/move3.png)
 
-If we consider starting from centroid of each cell : 
+If we consider starting from centroid of each cell : foulée.
+
 - distance of 1 for horizontal and vertical move 
 - distance of 1.41 for diagonal move
 
@@ -100,7 +101,7 @@ In we compute the interpolated value for cell (1,1), with power 2, the computati
 
 ((5/(1.41^2)) + (7/(1^2)) + (4/(1.41^2))) / ((1/(1.41^2)) + (1/(1^2)) + (1/(1.41^2))) ~= 5.76
 
-You could see bottom the generalisation of this computation with a precision of 2.
+You could also see in this figure the generalisation of the computation with a precision of 2.
 
 ### Understanding source code in detail
 
