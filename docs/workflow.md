@@ -27,6 +27,82 @@ Finally, individuals (x,y) are translated/relocated to some new grid of cells fu
 
 ## Step 2 Move population
 
+### Understanding the "Big Picture"
+
+#### Building AggregatedCategories
+
+We take a simple example extracted from a very simple EGT with only four people and a 4*4 grid of places.
+
+![move](./img/move1.jpg)
+
+We start by building our aggregated categories using h24 `social.scala` package, using fine category described by EGT : 
+
+- John is a male of 24 years, with education coded as SUP
+- Paul is a male of 39 years, with education coded as SUP
+
+In h24 John and Paul are grouped in the same `aggregatedCategory` : {gender male ;30-59 years ;up education}  
+
+If we look the grid we see the different places and activities that John, Paul practice for one day. We read this graphic like that : 
+- John stay at home (1,1) between 0h and 9h, then go to workplace (2,2) between 9h and 19h, and go back to home (1,1) at 19h. 
+- Paul stay at home (2,2) between 0h and 6h, then go to workplace (3,0) between 6h and 15h, practice an activity (1,0) between 15h and 23h, then go back to home (2,2) at 23h.
+
+Now, if we look at (b) :
+
+- Anna is a female of 22 years, with education coded as BAC
+- Lily is a female of 26 years, with education coded as BACP2
+
+We apply the same algorithm for Anna and Lily that are grouped in the same `aggregatedCategory` : {gender female ;15-29 years ;middle education}
+
+We read the Timeslice and the Matrix of places and activities like (a).
+
+#### Building moves for AggregatedCategory
+
+![move](./img/move2.jpg)
+
+In this next step algorithm build move for each AggregatedCategory. To do that, we cumulate the time spent by each individual by cutting it into three time slice.
+
+If we look at (a) : 
+
+- In the first [0h - 8h] time slice : 
+  - John stay at home during 8h in (1,1);
+  - Paul stay at home during 6h in (0,3) and go to work during 2h in (2,2)
+  
+  **=> for this time slice we aggregate these numbers in a list of [((place),hour);...]** : [((2,2),8); ((0,3),6); ((2,2),2)]
+
+- In the second [8h - 16h] time slice :
+  - John stay at home during 1h in (1,1) then go to work 7h in (2,2)
+  - Paul stay at work during 7h in (2,2) then go to activity 1h in (0,1)
+
+  **=> for this time slice we aggregate these numbers in a list of [((place),hour);...]** : [((0,1),1); ((1,1),1); ((2,2),14)]
+
+- In the third [16h - 24h] time slice :
+  - John stay at work during 3h in (2,2) then go to home 5h in (1,1)
+  - Paul stay at activy during 7h in (0,1) then go to home 1h in (0,3)
+
+  **=> for this time slice we aggregate these numbers in a list of [((place),hour);...]** : [((0,1),7); ((0,3),1); ((1,1),5), ((2,2),3)]
+
+These three list encode the `Moves` made by people of `AggregatedCategory {gender male ;30-59 years ;up education}` to `Cells` for each `Time Slice`. 
+
+We use the same algorithm for the other `AggregatedCategory` in (b)
+
+### Interpolate 
+
+ECG contain only a small parts of the real population. We use a simple IDW (Inverse Distance Weighting) interpolation to compute values for all cells that contain no moves.
+
+![move](./img/move3.png)
+
+If we consider starting from centroid of each cell : 
+- distance of 1 for horizontal and vertical move 
+- distance of 1.41 for diagonal move
+
+In we compute the interpolated value for cell (1,1), with power 2, the computation with precision of 2 is :
+
+((5/(1.41^2)) + (7/(1^2)) + (4/(1.41^2))) / ((1/(1.41^2)) + (1/(1^2)) + (1/(1.41^2))) ~= 5.76
+
+You could see bottom the generalisation of this computation with a precision of 2.
+
+### Understanding source code in detail
+
 Using EGT and population previously generated, flows are precomputed as File (`move.bin`) before running simulation.
 
 In `generation.scala` , in `flowsFromEgt(...)` the method `readFlowsFromEGT()` return an `Array[Flow]`
