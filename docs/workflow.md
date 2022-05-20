@@ -43,6 +43,7 @@ We start by building our aggregated categories using h24 `social.scala` package,
 In h24 John and Paul are grouped in the same `aggregatedCategory` : {gender male ;30-59 years ;up education}  
 
 If we look the grid we see the different places and activities that John, Paul practice for one day. We read this graphic like that : 
+
 - John stay at home (1,1) between 0h and 9h, then go to workplace (2,2) between 9h and 19h, and go back to home (1,1) at 19h. 
 - Paul stay at home (2,2) between 0h and 6h, then go to workplace (3,0) between 6h and 15h, practice an activity (1,0) between 15h and 23h, then go back to home (2,2) at 23h.
 
