@@ -4,9 +4,9 @@ name := "h24"
 
 version := "1.0-SNAPSHOT"
 
-scalaVersion := "3.1.0"
+scalaVersion := "2.13.8"
 
-crossScalaVersions := Seq("3.1.0")
+crossScalaVersions := Seq("2.13.8")
 
 val monocleVersion = "3.1.0"
 
@@ -53,7 +53,7 @@ libraryDependencies ++= Seq (
   "org.apache.poi" % "poi-ooxml"  % "4.1.1"
 )
 
-excludeDependencies += ExclusionRule("org.typelevel", "cats-kernel_2.13")
+//excludeDependencies += ExclusionRule("org.typelevel", "cats-kernel_2.13")
 
 scalacOptions ++= Seq("-release:11", "-language:postfixOps")
 

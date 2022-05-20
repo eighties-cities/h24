@@ -293,8 +293,8 @@ object dynamic {
       for {
         individual <- individuals
       } {
-        def newIndividual =
-          dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match {
+         def newIndividual =
+           dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match {
             case Some(d) => stableDestination.modify(_ + (dayTimeSlice -> d))(individual)
             case None => stableDestination.modify(_ + (dayTimeSlice -> home(individual)))(individual)
           }
