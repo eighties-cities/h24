@@ -14,7 +14,7 @@ import java.io.{File => JFile}
 import java.util
 import scala.collection.mutable.ArrayBuffer
 
-object PopulationGeopackageExporter extends App {
+@main def PopulationGeopackageExporter(args: String*): Unit = {
   case class Config(
                      population: Option[JFile] = None,
                      output: Option[JFile] = None,

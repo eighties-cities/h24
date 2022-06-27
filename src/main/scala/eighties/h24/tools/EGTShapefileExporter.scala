@@ -32,7 +32,7 @@ import scala.jdk.CollectionConverters.IteratorHasAsScala
 
 /**
  */
-object EGTShapefileExporter extends App {
+@main def EGTShapefileExporter(args: String*): Unit = {
 
   case class Config(
     population: Option[File] = None,

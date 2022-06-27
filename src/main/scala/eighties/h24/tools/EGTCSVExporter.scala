@@ -36,7 +36,7 @@ import com.github.tototoshi.csv.defaultCSVFormat
 
 /**
  */
-object EGTCSVExporter extends App {
+@main def EGTCSVExporter(args: String*): Unit = {
 
   case class Config(
     population: Option[File] = None,

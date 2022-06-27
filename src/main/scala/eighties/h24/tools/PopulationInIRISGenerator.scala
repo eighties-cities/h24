@@ -15,7 +15,8 @@ import scopt.OParser
 /**
  * Generate a synthetic population in IRIS and export it as a CSV file.
  */
-object PopulationInIRISGenerator extends App {
+@main def PopulationInIRISGenerator(args: String*): Unit = {
+  
   case class Config(
                      contour: Option[java.io.File] = None,
                      infraPopulation: Option[java.io.File] = None,

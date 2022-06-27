@@ -12,7 +12,7 @@ import org.geotools.factory.CommonFactoryFinder
 import org.geotools.util.factory.GeoTools
 import org.opengis.feature.simple.SimpleFeature
 
-object Comparator extends App {
+@main def Comparator(args: String*): Unit = {
   val dataDirectory = File("data")
   val generatedData = File("../h24/results_IDF")
   val outputDirectory = File("results_IDF")

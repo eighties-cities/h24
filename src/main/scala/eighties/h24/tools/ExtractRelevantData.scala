@@ -17,7 +17,7 @@ import scopt.OParser
 import scala.util.Try
 import com.github.tototoshi.csv.defaultCSVFormat
 
-object ExtractRelevantData extends App {
+@main def ExtractRelevantData(args: String*): Unit = {
   case class Config(
                      contour: Option[File] = None,
                      grid: Option[File] = None,

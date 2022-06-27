@@ -11,7 +11,8 @@ import org.geotools.feature.simple.SimpleFeatureBuilder
 import org.geotools.geojson.feature.FeatureJSON
 import org.geotools.referencing.CRS
 
-object GeoJSONPopulationGenerator extends App {
+@main def GeoJSONPopulationGenerator(args: String*): Unit = {
+  
   val inputFileName = "population2.bin"
   val outputFileName = "population2.json"
   val path = File("data")

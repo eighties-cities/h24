@@ -9,7 +9,8 @@ import eighties.h24.generation._
 import eighties.h24.social.{Age, Education}
 import scopt.OParser
 
-object PopulationShapefileExporter extends App {
+@main def PopulationShapefileExporter(args: String*): Unit = {
+  
   case class Config(
                      population: Option[JFile] = None,
                      output: Option[JFile] = None

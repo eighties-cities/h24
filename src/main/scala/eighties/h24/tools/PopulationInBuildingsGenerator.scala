@@ -21,7 +21,8 @@ import scala.util.Try
 /**
  * Generate a synthetic population in buildings and export it as a geopackage file.
  */
-object PopulationInBuildingsGenerator extends App {
+ @main def PopulationInBuildingsGenerator(args: String*): Unit = {
+  
   case class Config(
                      contour: Option[java.io.File] = None,
                      building: Option[java.io.File] = None,

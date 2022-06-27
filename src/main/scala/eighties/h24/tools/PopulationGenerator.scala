@@ -10,7 +10,7 @@ import monocle._
 /**
  * Generate a synthetic population.
  */
-object PopulationGenerator extends App {
+@main def PopulationGenerator(args: String*): Unit = {
   case class Config(
                      contour: Option[java.io.File] = None,
                      grid: Option[java.io.File] = None,

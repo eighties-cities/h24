@@ -20,7 +20,8 @@ import scopt.OParser
 
 import scala.util.Random
 
-object SimulationApp extends App {
+@main def SimulationApp(args: String*): Unit = {
+
   object Individual {
     def apply(
       feature: IndividualFeature,

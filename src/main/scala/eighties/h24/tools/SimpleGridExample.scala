@@ -7,7 +7,7 @@ import eighties.h24.generation._
 import eighties.h24.space.BoundingBox
 import monocle._
 
-object SimpleGridExample extends App {
+@main def SimpleGridExample(args: String*): Unit = {
 
   val inputDirectory = File("data")
   val contourIRISFile = inputDirectory / "simple_grid_5.shp"

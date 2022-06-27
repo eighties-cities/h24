@@ -9,7 +9,7 @@ import org.apache.commons.math3.random.JDKRandomGenerator
 import org.geotools.data.shapefile.ShapefileDataStoreFactory
 import org.geotools.data.{DataUtilities, Transaction}
 
-object EquipmentGenerator extends App {
+@main def EquipmentGenerator (args: String*): Unit = {
 
   val path = File("data")
   val outputPath = File("results")

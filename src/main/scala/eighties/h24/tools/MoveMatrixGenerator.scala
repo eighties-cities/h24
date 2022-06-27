@@ -12,8 +12,8 @@ import org.locationtech.jts.geom.{Coordinate, GeometryFactory}
 import scopt._
 
 
-object MoveMatrixGenerator extends App {
-
+@main def MoveMatrixGenerator(args: String*): Unit = {
+  
   case class Config(
     egt: Option[File] = None,
     inputSRID: Option[String] = None,
