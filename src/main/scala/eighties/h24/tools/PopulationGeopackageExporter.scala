@@ -25,7 +25,7 @@ import scala.collection.mutable.ArrayBuffer
   val parser = {
     import builder._
     OParser.sequence(
-      programName("population export as shapefile"),
+      programName("population export as geopackage"),
       opt[java.io.File]('p', "population")
         .required()
         .action((x, c) => c.copy(population = Some(x)))
@@ -33,7 +33,7 @@ import scala.collection.mutable.ArrayBuffer
       opt[java.io.File]('o', "output")
         .required()
         .action((x, c) => c.copy(output = Some(x)))
-        .text("output directory"),
+        .text("output file"),
       opt[Boolean]('c', "cell")
         .optional()
         .action((x, c) => c.copy(cellExport = x))

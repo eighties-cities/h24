@@ -7,7 +7,7 @@ version := "1.0-SNAPSHOT"
 //scalaVersion := "2.13.8"
 scalaVersion := "3.1.0"
 
-crossScalaVersions := Seq("2.13.8")
+//crossScalaVersions := Seq("2.13.8")
 
 val monocleVersion = "3.1.0"
 
