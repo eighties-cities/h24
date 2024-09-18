@@ -33,7 +33,7 @@ Finally, individuals (x,y) are translated/relocated to some new grid of cells fu
 
 We take a simple example extracted from a very simple EGT with only four people and a 4*4 grid of places.
 
-![move](./img/move1.jpg)
+![move](./images/doc/move1.jpg)
 
 We start by building our aggregated categories using h24 `social.scala` package, using fine category described by EGT : 
 
