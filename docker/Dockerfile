@@ -12,8 +12,8 @@ RUN chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
 RUN apt-get update && apt-get install --no-install-recommends -y gnupg libgnutls30 ntp apt-transport-https ca-certificates git git-lfs curl sbt python3 python3-pycurl bash tar gzip ca-certificates-java openssh-client tree unzip p7zip-full gdal-bin gosu lzma
 RUN update-ca-certificates
 
-COPY ./docker-entrypoint.sh /usr/local/bin
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+#COPY ./docker-entrypoint.sh /usr/local/bin
+#RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ARG GID
 ARG UID
@@ -29,8 +29,8 @@ RUN git clone https://github.com/eighties-cities/h24.git source
 
 WORKDIR /home/h24/source
 
-RUN unzip ./InputODData/H24_location_noID_ParisRegion.zip -d OD_IDF/
-RUN lzma -f ./OD_IDF/H24_location_noID_ParisRegion.csv
+RUN unzip ./preprocessing_odsurvey/data-output/Nantes/H24_location_noID_NantesRegion.zip -d OD_NANTES/
+RUN lzma -f ./OD_NANTES/H24_location_noID_NantesRegion.csv
 
 RUN ./getData.sh
 
