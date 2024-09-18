@@ -58,7 +58,7 @@ We read the Timeslice and the Matrix of places and activities like (a).
 
 #### Building moves for AggregatedCategory
 
-![move](./img/move2.jpg)
+![move](./images/doc/move2.jpg)
 
 In this next step algorithm build move for each AggregatedCategory. To do that, we cumulate the time spent by each individual by cutting it into three time slice.
 
@@ -90,7 +90,7 @@ We use the same algorithm for the other `AggregatedCategory` in (b)
 
 ECG contain only a small parts of the real population. We use a simple IDW (Inverse Distance Weighting) interpolation to compute values for all cells that contain actually no moves.
 
-![move](./img/move3.png)
+![move](./images/doc/move3.png)
 
 If we consider starting from centroid of each cell : foulée.
 
