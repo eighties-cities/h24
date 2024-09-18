@@ -18,7 +18,8 @@ markdown_extensions:
     - admonition
 nav:
   - Home: index.md
-  - Generation: workflow.md
-  - About: about.md
+  - h24 library - Workflows : h24workflows.md
+  - h24 library - Documentation : h24documentation.md
+
 extra_css:
   - /docs/css/moar.css
