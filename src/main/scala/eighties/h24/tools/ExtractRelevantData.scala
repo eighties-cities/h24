@@ -76,8 +76,24 @@ import com.github.tototoshi.csv.defaultCSVFormat
           writer.close()
           dataStore.dispose()
         }
-      } finally reader.close()
-    } finally store.dispose()
+      } catch {
+        case e: IOException => println("Had an IOException trying reading this file")
+        case e: FileNotFoundException => println("File Not Found")
+        case e: NoSuchElementException => println("No such element")
+        case e: IllegalArgumentException => println("Bad Argument")
+        case _: Throwable => println("Other Exception")
+      }
+      finally {
+       try {
+         reader.close()
+       }catch {
+         case e:IOException => println("Had an IOException trying closing this reader")
+       }
+      }
+    } catch {
+      case e: IOException => println("Had an IOException trying reading getting feature reader")
+    }
+    finally store.dispose()
   }
 
   def getStringCellValue(cell: Cell) = {for (cel <- Option(cell)) yield {if (cel.getCellType == CellType.NUMERIC) cel.getNumericCellValue.toString else cel.getStringCellValue}} getOrElse ""
