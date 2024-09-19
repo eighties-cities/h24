@@ -14,7 +14,7 @@ import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
 import scopt.OParser
 
-import scala.util.Try
+import scala.util.{Try,Failure}
 import com.github.tototoshi.csv.defaultCSVFormat
 
 @main def ExtractRelevantData(args: String*): Unit = {
@@ -69,6 +69,7 @@ import com.github.tototoshi.csv.defaultCSVFormat
       try {
         Try {
           val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
+          Log.log("Feature Reader is ready ...")
           featureReader.filter(feature=>filter(feature)).foreach{
             feature=>
               Log.log("Write ...")
