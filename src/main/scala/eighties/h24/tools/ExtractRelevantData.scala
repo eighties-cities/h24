@@ -79,6 +79,8 @@ import com.github.tototoshi.csv.defaultCSVFormat
           Log.log("Write close")
           dataStore.dispose()
           Log.log("dataStore dispose")
+        } match {
+          case Failure(exception) => println(exception)
         }
       } catch {
         case e: IOException => println("Had an IOException trying reading this file")
