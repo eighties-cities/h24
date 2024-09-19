@@ -105,6 +105,7 @@ import com.github.tototoshi.csv.defaultCSVFormat
     finally {
       try {
         store.dispose()
+        Log.log("Store Dispose")
       }catch {
         case _: Throwable => println("Other exception during store closing")
       }
