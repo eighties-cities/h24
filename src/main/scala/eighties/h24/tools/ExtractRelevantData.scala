@@ -1,11 +1,11 @@
 package eighties.h24.tools
 
-import java.io.{BufferedOutputStream, File, FileOutputStream, IOException, FileNotFoundException }
-import java.util.{NoSuchElementException}
+import java.io.{BufferedOutputStream, File, FileNotFoundException, FileOutputStream, IOException}
+import java.util.NoSuchElementException
 import com.github.tototoshi.csv.CSVWriter
 import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
 import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet}
-import org.geotools.data.Transaction
+import org.geotools.data.{DataStoreFinder, Query, Transaction}
 import org.geotools.data.shapefile.{ShapefileDataStore, ShapefileDataStoreFactory}
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.geometry.jts.JTS
@@ -14,8 +14,10 @@ import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
 import scopt.OParser
 
-import scala.util.{Try,Failure}
+import scala.util.{Failure, Try}
 import com.github.tototoshi.csv.defaultCSVFormat
+
+import java.util
 
 @main def ExtractRelevantData(args: String*): Unit = {
   case class Config(
@@ -56,60 +58,54 @@ import com.github.tototoshi.csv.defaultCSVFormat
         .text("output directory")
     )
   }
-  def filterShape(file: File, filter: SimpleFeature => Boolean, outputFile: File) = {
-    val store = new ShapefileDataStore(file.toURI.toURL)
+  def filterShape(file: File, filter: SimpleFeature => Boolean, outputFile: File): Unit = {
+    val params = new util.HashMap[String, Serializable]()
+    params.put("url", file.toURI.toURL)
+    val store = DataStoreFinder.getDataStore(params)
     val factory = new ShapefileDataStoreFactory
     val dataStore = factory.createDataStore(outputFile.toURI.toURL)
-    dataStore.createSchema(store.getSchema)
     val typeName = dataStore.getTypeNames()(0)
+    dataStore.createSchema(store.getSchema(typeName))
     val writer = dataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
-    try {
-      val reader = store.getFeatureReader
+    try
+      val query = new Query(typeName)
+      // TODO : we should probably use query.setFilter instead of filtering manually
       Log.log("Get Feature reader")
-      try {
-        Try {
-          val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
-          Log.log("Feature Reader is ready ...")
-          featureReader.filter(feature=>filter(feature)).foreach{
-            feature=>
-              Log.log("Write ...")
-              writer.next.setAttributes(feature.getAttributes)
-              writer.write()
-          }
-          writer.close()
-          Log.log("Write close")
-          dataStore.dispose()
-          Log.log("dataStore dispose")
-        } match {
-          case Failure(exception) => println(exception)
+      val reader = store.getFeatureReader(query, Transaction.AUTO_COMMIT)
+      try
+        val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
+        Log.log("Feature Reader is ready ...")
+        featureReader.filter(feature=>filter(feature)).foreach{
+          feature=>
+//            Log.log("Write ...")
+            writer.next.setAttributes(feature.getAttributes)
+            writer.write()
         }
-      } catch {
-        case e: IOException => println("Had an IOException trying reading this file")
-        case e: FileNotFoundException => println("File Not Found")
-        case e: NoSuchElementException => println("No such element")
-        case e: IllegalArgumentException => println("Bad Argument")
+        writer.close()
+        Log.log("Write close")
+        dataStore.dispose()
+        Log.log("dataStore dispose")
+      catch
+        case e: IOException => println("Had an IOException trying reading this file: " + e)
+        case e: FileNotFoundException => println("File Not Found: " + e)
+        case e: NoSuchElementException => println("No such element: " + e)
+        case e: IllegalArgumentException => println("Bad Argument: " + e)
         case _: Throwable => println("Other Exception")
-      }
-      finally {
-       try {
+      finally
+       try
          Log.log("Closing reader")
          reader.close()
-       }catch {
-         case e:IOException => println("Had an IOException trying closing this reader")
+       catch
+         case e:IOException => println("Had an IOException trying closing this reader: " + e)
          case _:Throwable => println("Other exception during close")
-       }
-      }
-    } catch {
-      case e: IOException => println("Had an IOException trying reading getting feature reader")
-    }
-    finally {
-      try {
+    catch
+      case e: IOException => println("Had an IOException trying reading getting feature reader: " + e)
+    finally
+      try
         store.dispose()
         Log.log("Store Dispose")
-      }catch {
+      catch
         case _: Throwable => println("Other exception during store closing")
-      }
-    }
   }
 
   def getStringCellValue(cell: Cell) = {for (cel <- Option(cell)) yield {if (cel.getCellType == CellType.NUMERIC) cel.getNumericCellValue.toString else cel.getStringCellValue}} getOrElse ""
