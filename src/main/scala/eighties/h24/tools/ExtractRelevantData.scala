@@ -1,7 +1,7 @@
 package eighties.h24.tools
 
-import java.io.{BufferedOutputStream, File, FileOutputStream}
-
+import java.io.{BufferedOutputStream, File, FileOutputStream, IOException, FileNotFoundException }
+import java.util.{NoSuchElementException}
 import com.github.tototoshi.csv.CSVWriter
 import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
 import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet}
