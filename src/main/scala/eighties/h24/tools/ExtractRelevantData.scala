@@ -65,16 +65,20 @@ import com.github.tototoshi.csv.defaultCSVFormat
     val writer = dataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
     try {
       val reader = store.getFeatureReader
+      Log.log("Get Feature reader")
       try {
         Try {
           val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
           featureReader.filter(feature=>filter(feature)).foreach{
             feature=>
+              Log.log("Write ...")
               writer.next.setAttributes(feature.getAttributes)
               writer.write()
           }
           writer.close()
+          Log.log("Write close")
           dataStore.dispose()
+          Log.log("dataStore dispose")
         }
       } catch {
         case e: IOException => println("Had an IOException trying reading this file")
