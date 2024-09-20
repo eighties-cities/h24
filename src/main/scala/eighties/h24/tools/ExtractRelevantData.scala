@@ -61,18 +61,24 @@ import java.util
   def filterShape(file: File, filter: SimpleFeature => Boolean, outputFile: File): Unit = {
     val params = new util.HashMap[String, Serializable]()
     params.put("url", file.toURI.toURL)
-    val store = DataStoreFinder.getDataStore(params)
+    val inputDataStore = DataStoreFinder.getDataStore(params)
     val factory = new ShapefileDataStoreFactory
-    val dataStore = factory.createDataStore(outputFile.toURI.toURL)
-    val typeName = dataStore.getTypeNames()(0)
-    dataStore.createSchema(store.getSchema(typeName))
-    val writer = dataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
+    if outputFile.exists then outputFile.delete()
+    val outputDataStore = factory.createDataStore(outputFile.toURI.toURL)
+    val typeName = outputDataStore.getTypeNames()(0)
+    outputDataStore.createSchema(inputDataStore.getSchema(typeName))
+    val writer = outputDataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
     try
       val query = new Query(typeName)
-      // TODO : we should probably use query.setFilter instead of filtering manually
       Log.log("Get Feature reader")
-      val reader = store.getFeatureReader(query, Transaction.AUTO_COMMIT)
+      val reader = inputDataStore.getFeatureReader(query, Transaction.AUTO_COMMIT)
       try
+        while reader.hasNext do
+          val feature = reader.next
+          if filter(feature) then
+            writer.next.setAttributes(feature.getAttributes)
+            writer.write()
+        /*
         val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
         Log.log("Feature Reader is ready ...")
         featureReader.filter(feature=>filter(feature)).foreach{
@@ -81,9 +87,10 @@ import java.util
             writer.next.setAttributes(feature.getAttributes)
             writer.write()
         }
+        */
         writer.close()
         Log.log("Write close")
-        dataStore.dispose()
+        outputDataStore.dispose()
         Log.log("dataStore dispose")
       catch
         case e: IOException => println("Had an IOException trying reading this file: " + e)
@@ -102,7 +109,7 @@ import java.util
       case e: IOException => println("Had an IOException trying reading getting feature reader: " + e)
     finally
       try
-        store.dispose()
+        inputDataStore.dispose()
         Log.log("Store Dispose")
       catch
         case _: Throwable => println("Other exception during store closing")
