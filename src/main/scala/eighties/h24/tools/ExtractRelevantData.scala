@@ -1,11 +1,11 @@
 package eighties.h24.tools
 
-import java.io.{BufferedOutputStream, File, FileOutputStream, IOException, FileNotFoundException }
-import java.util.{NoSuchElementException}
+import java.io.{BufferedOutputStream, File, FileNotFoundException, FileOutputStream, IOException}
+import java.util.NoSuchElementException
 import com.github.tototoshi.csv.CSVWriter
 import org.apache.commons.compress.compressors.lzma.LZMACompressorOutputStream
 import org.apache.poi.ss.usermodel.{Cell, CellType, Row, Sheet}
-import org.geotools.data.Transaction
+import org.geotools.data.{DataStore, DataStoreFinder, Query, Transaction}
 import org.geotools.data.shapefile.{ShapefileDataStore, ShapefileDataStoreFactory}
 import org.geotools.factory.CommonFactoryFinder
 import org.geotools.geometry.jts.JTS
@@ -14,8 +14,10 @@ import org.locationtech.jts.geom.Geometry
 import org.opengis.feature.simple.SimpleFeature
 import scopt.OParser
 
-import scala.util.{Try,Failure}
+import scala.util.{Failure, Try}
 import com.github.tototoshi.csv.defaultCSVFormat
+
+import java.util
 
 @main def ExtractRelevantData(args: String*): Unit = {
   case class Config(
@@ -56,60 +58,42 @@ import com.github.tototoshi.csv.defaultCSVFormat
         .text("output directory")
     )
   }
-  def filterShape(file: File, filter: SimpleFeature => Boolean, outputFile: File) = {
-    val store = new ShapefileDataStore(file.toURI.toURL)
-    val factory = new ShapefileDataStoreFactory
-    val dataStore = factory.createDataStore(outputFile.toURI.toURL)
-    dataStore.createSchema(store.getSchema)
-    val typeName = dataStore.getTypeNames()(0)
-    val writer = dataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
-    try {
-      val reader = store.getFeatureReader
+  def filterShape(inputDataStore: DataStore, typeName: String, filter: SimpleFeature => Boolean, outputDataStore: DataStore): Unit = {
+    outputDataStore.createSchema(inputDataStore.getSchema(typeName))
+    val writer = outputDataStore.getFeatureWriterAppend(typeName, Transaction.AUTO_COMMIT)
+    try
+      val query = new Query(typeName)
       Log.log("Get Feature reader")
-      try {
-        Try {
-          val featureReader = Iterator.continually(reader.next).takeWhile(_ => reader.hasNext)
-          Log.log("Feature Reader is ready ...")
-          featureReader.filter(feature=>filter(feature)).foreach{
-            feature=>
-              Log.log("Write ...")
-              writer.next.setAttributes(feature.getAttributes)
-              writer.write()
-          }
-          writer.close()
-          Log.log("Write close")
-          dataStore.dispose()
-          Log.log("dataStore dispose")
-        } match {
-          case Failure(exception) => println(exception)
-        }
-      } catch {
-        case e: IOException => println("Had an IOException trying reading this file")
-        case e: FileNotFoundException => println("File Not Found")
-        case e: NoSuchElementException => println("No such element")
-        case e: IllegalArgumentException => println("Bad Argument")
+      val reader = inputDataStore.getFeatureReader(query, Transaction.AUTO_COMMIT)
+      try
+        while reader.hasNext do
+          val feature = reader.next
+          if filter(feature) then
+            writer.next.setAttributes(feature.getAttributes)
+            writer.write()
+        writer.close()
+        Log.log("Write close")
+      catch
+        case e: IOException => println("Had an IOException trying reading this file: " + e)
+        case e: FileNotFoundException => println("File Not Found: " + e)
+        case e: NoSuchElementException => println("No such element: " + e)
+        case e: IllegalArgumentException => println("Bad Argument: " + e)
         case _: Throwable => println("Other Exception")
-      }
-      finally {
-       try {
+      finally
+       try
          Log.log("Closing reader")
          reader.close()
-       }catch {
-         case e:IOException => println("Had an IOException trying closing this reader")
+       catch
+         case e:IOException => println("Had an IOException trying closing this reader: " + e)
          case _:Throwable => println("Other exception during close")
-       }
-      }
-    } catch {
-      case e: IOException => println("Had an IOException trying reading getting feature reader")
-    }
-    finally {
-      try {
-        store.dispose()
+    catch
+      case e: IOException => println("Had an IOException trying reading getting feature reader: " + e)
+    finally
+      try
+        inputDataStore.dispose()
         Log.log("Store Dispose")
-      }catch {
+      catch
         case _: Throwable => println("Other exception during store closing")
-      }
-    }
   }
 
   def getStringCellValue(cell: Cell) = {for (cel <- Option(cell)) yield {if (cel.getCellType == CellType.NUMERIC) cel.getNumericCellValue.toString else cel.getStringCellValue}} getOrElse ""
@@ -136,19 +120,35 @@ import com.github.tototoshi.csv.defaultCSVFormat
       // extract the relevant data from the input files and put them in the output directory
       val outputContourFile = new java.io.File(outputDirectory, config.contour.get.getName)
       Log.log("outputContourFile = " + outputContourFile)
-      filterShape(config.contour.get, (feature:SimpleFeature)=>if (config.deps.isEmpty) true else config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2)), outputContourFile)
-      val store = new ShapefileDataStore(outputContourFile.toURI.toURL)
+      val factory = new ShapefileDataStoreFactory
+      def getInputDataStore(file: File): (DataStore, String) =
+        val params = new util.HashMap[String, Serializable]()
+        params.put("url", file.toURI.toURL)
+        val store = DataStoreFinder.getDataStore(params)
+        (store, store.getTypeNames()(0))
+      def getOutputDataStore(file: File): DataStore =
+        if file.exists then file.delete()
+        factory.createDataStore(file.toURI.toURL)
+      val (contourStore, contourTypeName) = getInputDataStore(config.contour.get)
+      val outputContourStore = getOutputDataStore(outputContourFile)
+      def featureInDep(feature:SimpleFeature) = if (config.deps.isEmpty) true else config.deps.get.contains(feature.getAttribute("DEPCOM").toString.trim.substring(0,2))
+      filterShape(contourStore, contourTypeName, featureInDep, outputContourStore)
+      // we keep the outputContourStore open to filter grid cells
       val ff = CommonFactoryFinder.getFilterFactory2()
-      val featureSource = store.getFeatureSource
+      val featureSource = outputContourStore.getFeatureSource(contourTypeName)
       val l2eCRS = CRS.decode("EPSG:27572")
       val l3CRS = CRS.decode("EPSG:2154")
       val transform = CRS.findMathTransform(l2eCRS, l3CRS, true)
       val outputGridFile = new java.io.File(outputDirectory, config.grid.get.getName)
       Log.log("outputGridFile = " + outputGridFile)
       Log.log("filtershape")
-      filterShape(config.grid.get, (feature:SimpleFeature)=>{!featureSource.getFeatures(ff.intersects(ff.property(store.getSchema.getGeometryDescriptor.getLocalName), ff.literal(JTS.transform(feature.getDefaultGeometry.asInstanceOf[Geometry], transform)))).isEmpty}, outputGridFile)
+      val (gridStore, gridTypeName) = getInputDataStore(config.grid.get)
+      val outputGridStore = getOutputDataStore(outputGridFile)
+      def featureIntersectsContours(feature:SimpleFeature) = {!featureSource.getFeatures(ff.intersects(ff.property(featureSource.getSchema.getGeometryDescriptor.getLocalName), ff.literal(JTS.transform(feature.getDefaultGeometry.asInstanceOf[Geometry], transform)))).isEmpty}
+      filterShape(gridStore, gridTypeName, featureIntersectsContours, outputGridStore)
       Log.log("store.dispose start")
-      store.dispose()
+      outputContourStore.dispose()
+      outputGridStore.dispose()
       Log.log("store.dispose end")
       val outputInfraPopulationFile = new java.io.File(outputDirectory, config.infraPopulation.get.getName.substring(0, config.infraPopulation.get.getName.lastIndexOf("."))+".csv.lzma")
       Log.log("outputInfraPopulationFile = "+outputInfraPopulationFile)
@@ -159,5 +159,4 @@ import com.github.tototoshi.csv.defaultCSVFormat
       Log.log("done")
     case _ =>
   }
-
 }
