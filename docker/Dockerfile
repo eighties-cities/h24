@@ -32,6 +32,10 @@ WORKDIR /home/h24/source
 RUN unzip ./preprocessing_odsurvey/data-output/Nantes/H24_location_noID_NantesRegion.zip -d OD_NANTES/
 RUN lzma -f ./OD_NANTES/H24_location_noID_NantesRegion.csv
 
+RUN unzip ./preprocessing_odsurvey/data-output/Paris/H24_location_noID_ParisRegion.zip -d OD_IDF/
+RUN lzma -f ./OD_IDF/H24_location_noID_ParisRegion.csv
+
+
 RUN ./getData.sh
 
 ENTRYPOINT ["sbt"]
