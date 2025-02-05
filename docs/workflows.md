@@ -22,7 +22,7 @@ Run the getData.sh script.
 
 It will:
 
--   download the **CONTOURS-IRIS** files from <http://professionnel.ign.fr/contoursiris> for instance: <https://wxs-telechargement.ign.fr/1yhlj2ehpqf3q6dt6a2y7b64/telechargement/inspire/CONTOURS-IRIS-FRANCE-2014-01-01$CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/file/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01.7z>
+-   download the **CONTOURS-IRIS** files from <http://professionnel.ign.fr/contoursiris> for instance: <https://data.geopf.fr/telechargement/download/CONTOURS-IRIS/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01/CONTOURS-IRIS_2-0__SHP_LAMB93_FXX_2014-01-01.7z>
 -   download **R_rfl09_LAEA1000** file from <https://www.insee.fr/fr/statistiques/fichier/1405815/ECP1KM_09_MET.zip>
 -   download **base-ic-evol-struct-pop** file from <https://www.insee.fr/fr/statistiques/fichier/2028582/infra-population-2012.zip>
 -   download **base-ic-diplomes-formation** file from <https://www.insee.fr/fr/statistiques/fichier/2028265/infra-formation-2012.zip>
