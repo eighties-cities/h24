@@ -5,6 +5,7 @@ editor_options:
 ---
 # Requirement
 - You need to install **sbt** from <https://www.scala-sbt.org/download/>
+- You need to **GDAL** for the preprocessing steps from <https://gdal.org/en/stable/download.html>
 
 # Workflow to generate synthetic population with H24 library
 
