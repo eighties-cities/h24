@@ -3,6 +3,8 @@ editor_options:
   markdown: 
     wrap: sentence
 ---
+# Requirement
+- You need to install **sbt** from <https://www.scala-sbt.org/download/>
 
 # Workflow to generate synthetic population with H24 library
 
