@@ -1,0 +1,9 @@
+*.dbf
+*.fix
+*.qix
+*.shx
+*.shp
+*.prj
+*.csv
+*.lzma
+*.zip

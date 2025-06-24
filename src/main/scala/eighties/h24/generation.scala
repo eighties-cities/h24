@@ -691,7 +691,7 @@ object  generation {
       ts -> Array.tabulate(i, j) { (_, _) => Map.empty[AggregatedSocialCategory, Array[Move]] }
     }
 
-  def idw(power: Double)(location: Location, moves: Array[Move], neighborhood: Vector[(Location, Array[Move])]): Array[Move] = {
+  def idwWhenEmpty(power: Double)(location: Location, moves: Array[Move], neighborhood: Vector[(Location, Array[Move])]): Array[Move] = {
     if (moves.isEmpty) {
       val weights = neighborhood.map(v => v._1 -> 1.0 / scala.math.pow(space.distance(location, v._1), power)).toMap
       def destinationsIndex = neighborhood.flatMap(_._2).map(_.locationIndex).distinct.toArray
@@ -778,11 +778,11 @@ object  generation {
             val p = geomFactory.createPoint(new Coordinate(lc._1._1, lc._1._2))
             index.insert(p.getEnvelopeInternal, lc)
           }
-          time -> CellMatrix.modify(interpolateFlows(index, idw(2.0)))(cellMatrix)
+          time -> CellMatrix.modify(interpolateFlows(index, idwWhenEmpty(2.0)))(cellMatrix)
       }
     }
 
-    def getMovesFromOppositeSex(c: Cell): Cell =
+    def getMovesFromOppositeSexWhenNoMove(c: Cell): Cell =
       AggregatedSocialCategory.all.flatMap { cat =>
         val moves = c.get(cat)
         def noSex = c.find { case (sc, _) => sc.age == cat.age && sc.education == cat.education }.map(_._2)
@@ -801,7 +801,7 @@ object  generation {
       }
 
       interpolate(nm).map {
-        case (c, cellMatrix) => c -> CellMatrix.modify((cell, _) => normalizeFlows(getMovesFromOppositeSex(cell)))(cellMatrix)
+        case (c, cellMatrix) => c -> CellMatrix.modify((cell, _) => normalizeFlows(getMovesFromOppositeSexWhenNoMove(cell)))(cellMatrix)
       }
     }
   }

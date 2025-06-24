@@ -1,4 +1,4 @@
-site_name: H24 Documentation
+site_name: About H24 library
 repo_url: https://github.com/eighties-cities/h24/
 site_url: https://eighties-cities.github.io/h24/
 theme:
@@ -18,7 +18,8 @@ markdown_extensions:
     - admonition
 nav:
   - Home: index.md
-  - Generation: workflow.md
-  - About: about.md
+  - Workflows : workflows.md
+  - Documentation : doc.md
+
 extra_css:
   - /docs/css/moar.css
