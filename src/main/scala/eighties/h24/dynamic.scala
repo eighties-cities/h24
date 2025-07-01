@@ -3,13 +3,13 @@ package eighties.h24
 import org.locationtech.jts.geom.{Coordinate, Envelope}
 import org.locationtech.jts.index.strtree.STRtree
 import eighties.h24.tools.random.multinomial
-import eighties.h24.social._
+import eighties.h24.social.*
 import space.{Attraction, Index, Location, World}
-import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice}
+import eighties.h24.generation.{LCell, dayTimeSlice, nightTimeSlice, timeSlices}
 import monocle.function.all.index
 import monocle.{Lens, Traversal}
-import tools.random._
-import monocle._
+import tools.random.*
+import monocle.*
 
 import scala.reflect.ClassTag
 import scala.util.Random
@@ -19,24 +19,22 @@ object dynamic {
   import MoveMatrix._
 
   def reachable[T](index: Index[T]): Seq[(Int, Int)] =
-    for {
+    for
       i <- 0 until index.sideI
       j <- 0 until index.sideJ
       if !index.cells(i)(j).isEmpty
-    } yield (i, j)
+    yield (i, j)
 
-  def randomMove[I: ClassTag](world: World[I], timeSlice: TimeSlice, ratio: Double, location: Lens[I, Location], stableDestinations: I => Map[TimeSlice, Location], random: Random): World[I] = {
+  def stableDestinationOrRandomMove[I: ClassTag](world: World[I], timeSlice: TimeSlice, location: Lens[I, Location], stableDestinations: I => Map[TimeSlice, Location], random: Random): World[I] =
     val reach = reachable(Index.indexIndividuals(world, location.get))
     val rSize = reach.size
-    def randomLocation = location.modify(l => if(random.nextDouble() < ratio) reach(random.nextInt(rSize)) else l)
+    def randomLocation = location.replace(reach(random.nextInt(rSize)))
     def move(individual: I) = stableLocationOrMove(individual, timeSlice, stableDestinations, location, randomLocation)
     (World.allIndividuals[I] modify move) (world)
-  }
 
-  def goBackHome[W, I](world: W, allIndividuals: Traversal[W, I], location: Lens[I, Location], home: I => Location): W = {
-    def m = (individual: I) => location.set(home(individual))(individual)
+  def goBackHome[W, I](world: W, allIndividuals: Traversal[W, I], location: Lens[I, Location], home: I => Location): W =
+    def m = (individual: I) => location.replace(home(individual))(individual)
     (allIndividuals modify m)(world)
-  }
 
   object MoveMatrix {
 
@@ -232,67 +230,93 @@ object dynamic {
 
   }
 
-  def moveFlowDefaultOnOtherSex[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory) /*moves: MoveMatrix.CellMatrix, individualInCel: Individual)*/ = {
+  def moveFlowDefaultOnOtherSex[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory) /*moves: MoveMatrix.CellMatrix, individualInCel: Individual)*/ =
     //val location = Individual.location.get(individual)
     //val cellMoves = moves(location._1)(location._2)
     val aggregatedCategory = socialCategory(individual)
     def myCategory = cellMoves.get(aggregatedCategory)
     def noSex = cellMoves.find { case(c, _) => Focus[AggregatedSocialCategory](_.age).get(c) == Focus[AggregatedSocialCategory](_.age).get(aggregatedCategory) && c.education == aggregatedCategory.education }.map(_._2)
     myCategory orElse noSex
-  }
 
   def sampleDestinationInMoveMatrix[I](cellMoves: Cell, individual: I, socialCategory: I => AggregatedSocialCategory, random: Random) =
-    moveFlowDefaultOnOtherSex(cellMoves, individual, socialCategory).flatMap { m =>
-      if(m.isEmpty) None else Some(multinomial(m.map{ m => MoveMatrix.Move.location.get(m) -> Focus[MoveMatrix.Move](_.ratio).get(m).toDouble })(random))
-    }
+    moveFlowDefaultOnOtherSex(cellMoves, individual, socialCategory).flatMap: m =>
+      if m.isEmpty
+      then None
+      else
+        Some:
+          multinomial(m.map{ m => MoveMatrix.Move.location.get(m) -> Focus[MoveMatrix.Move](_.ratio).get(m).toDouble })(using random)
 
   def stableLocationOrMove[I](individual: I, timeSlice: TimeSlice, stableDestinations: I => Map[TimeSlice, Location], location: Lens[I, Location], move: I => I) =
-    stableDestinations(individual).get(timeSlice) match {
+    stableDestinations(individual).get(timeSlice) match
       case None => move(individual)
       case Some(stableDestination) => location.set(stableDestination)(individual)
-    }
 
-  def moveInMoveMatrix[I: ClassTag](world: World[I], locatedCell: LocatedCell, timeSlice: TimeSlice, stableDestination: I => Map[TimeSlice, Location], location: Lens[I, Location], home: I => Location, socialCategory: I => AggregatedSocialCategory, random: Random): World[I] = {
-    def sampleMoveInMatrix[J](cellMoves: Cell, location: Lens[J, Location], socialCategory: J => AggregatedSocialCategory)(individual: J) =
-      sampleDestinationInMoveMatrix(cellMoves, individual, socialCategory, random) match {
-        case Some(destination) => location.set(destination)(individual)
+
+  def stableDestinationOrMoveInMoveMatrix[I: ClassTag](
+    world: World[I],
+    locatedCell: LocatedCell,
+    timeSlice: TimeSlice,
+    stableDestination: I => Map[TimeSlice, Location],
+    location: Lens[I, Location],
+    home: I => Location,
+    socialCategory: I => AggregatedSocialCategory,
+    randomRatio: Double,
+    random: Random): World[I] =
+
+    def sampleMoveInMatrix(cellMoves: Cell, location: Lens[I, Location], socialCategory: I => AggregatedSocialCategory)(individual: I): I =
+      sampleDestinationInMoveMatrix(cellMoves, individual, socialCategory, random) match
+        case Some(destination) => location.replace(destination)(individual)
         case None => individual
-      }
+
+
+    lazy val reach = reachable(Index.indexIndividuals(world, location.get))
+    lazy val rSize = reach.size
+
+    def randomMove(location: Lens[I, Location], random: Random) =
+      location.replace(reach(random.nextInt(rSize)))
+
+    def move(cellMoves: => Cell, location: Lens[I, Location], socialCategory: I => AggregatedSocialCategory, random: Random) =
+      def stableOrMoveInMatrix(individual: I) = stableLocationOrMove(individual, timeSlice, stableDestination, location, sampleMoveInMatrix(cellMoves, location, socialCategory))
+
+      if randomRatio <= 0.0
+      then stableOrMoveInMatrix
+      else
+        if random.nextDouble() < randomRatio
+        then randomMove(location, random)
+        else stableOrMoveInMatrix
 
     val newIndividuals = Array.ofDim[I](world.individuals.length)
     var index = 0
 
-    for {
+    for
       (line, i) <- Focus[Index[I]](_.cells).get(Index.indexIndividuals(world, home)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
-    } {
+    do
       lazy val cell = locatedCell(timeSlice, i, j)
-      for {
+      for
         individual <- individuals
-      } {
-        newIndividuals(index) = stableLocationOrMove(individual, timeSlice, stableDestination, location, sampleMoveInMatrix(cell, location, socialCategory))
+      do
+        newIndividuals(index) = move(cell, location, socialCategory, random)(individual)
         index += 1
-      }
-    }
+
 
     Focus[World[I]](_.individuals).set(newIndividuals)(world)
-  }
 
-  def assignRandomDayLocation[I: ClassTag](world: World[I], locatedCell: LocatedCell, stableDestination: Lens[I, Map[TimeSlice, Location]], location: I => Location, home: I => Location, socialCategory: I => AggregatedSocialCategory, rng: Random) = {
+  def assignRandomDayLocation[I: ClassTag](world: World[I], locatedCell: LocatedCell, stableDestination: Lens[I, Map[TimeSlice, Location]], location: I => Location, home: I => Location, socialCategory: I => AggregatedSocialCategory, rng: Random) =
     val newIndividuals = Array.ofDim[I](world.individuals.length)
     var index = 0
 
-    for {
+    for
       (line, i) <- Focus[Index[I]](_.cells).get(Index.indexIndividuals(world, location)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
-    } {
+    do
       val workTimeMovesFromCell = locatedCell(dayTimeSlice, i, j)
 
       assert(workTimeMovesFromCell != null)
 
-      for {
+      for
         individual <- individuals
-      } {
+      do
         def newIndividual =
           dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match {
             case Some(d) => stableDestination.modify(_ + (dayTimeSlice -> d))(individual)
@@ -300,16 +324,13 @@ object dynamic {
           }
         newIndividuals(index) = newIndividual
         index += 1
-      }
-    }
 
     Focus[World[I]](_.individuals).set(newIndividuals)(world)
-  }
 
   def assignFixNightLocation[I: ClassTag](world: World[I], stableDestination: Lens[I, Map[TimeSlice, Location]], home: I => Location) =
     World.allIndividuals[I].modify { individual => stableDestination.modify(_ + (nightTimeSlice -> home(individual)))(individual) } (world)
 
-  def randomiseLocation[I: ClassTag](world: World[I], location: I => Location, home: Lens[I, Location], random: Random) = {
+  def randomiseLocation[I: ClassTag](world: World[I], location: I => Location, home: Lens[I, Location], random: Random) =
     val reach = reachable(Index[I](world.individuals.iterator, location, world.sideI, world.sideJ))
     val reachSize = reach.size
 
@@ -317,7 +338,6 @@ object dynamic {
       home.set(reach(random.nextInt(reachSize))) (individual)
 
     (World.allIndividuals[I] modify assign)(world)
-  }
 
   def generateAttractions[I: ClassTag](world: World[I], proportion: Double, location: I => Location, random: Random) = {
     val reach = reachable(Index.indexIndividuals(world, location))

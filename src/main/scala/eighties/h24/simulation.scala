@@ -28,15 +28,11 @@ import scala.annotation.tailrec
 import scala.reflect.ClassTag
 import scala.util.Random
 
-object simulation {
+object simulation:
 
-  sealed trait MoveType
-
-  object MoveType {
-    case object Data extends MoveType
-    case object Random extends MoveType
-    case object No extends MoveType
-  }
+  enum MoveType:
+    case Data, No, Random
+    case PartialRandom(p: Double, slices: Seq[TimeSlice])
 
   def simulateWorld[I: ClassTag](
     days: Int,
@@ -51,37 +47,43 @@ object simulation {
     home: I => Location,
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] = {
+    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] =
 
+    @tailrec def simulateOneDay(
+      world: space.World[I],
+      bb: BoundingBox,
+      gridSize: Int,
+      timeSlices: List[TimeSlice],
+      locatedCell: LocatedCell,
+      day: Int,
+      slice: Int = 0): World[I] =
+      timeSlices match
+        case Nil => world
+        case time :: t =>
+          def moved = moveType match
+            case MoveType.Data => dynamic.stableDestinationOrMoveInMoveMatrix(world, locatedCell, time, stableDestinations, location, home, socialCategory, 0.0, rng)
+            case MoveType.PartialRandom(p, s) =>
+              val randomMoveProbability = if s.contains(time) then p else 0.0
+              dynamic.stableDestinationOrMoveInMoveMatrix(world, locatedCell, time, stableDestinations, location, home, socialCategory, randomMoveProbability, rng)
+            case MoveType.Random => dynamic.stableDestinationOrRandomMove(world, time, location, stableDestinations, rng)
+            case MoveType.No => world
 
-    @tailrec def simulateOneDay(world: space.World[I], bb: BoundingBox, gridSize: Int, timeSlices: List[TimeSlice], locatedCell: LocatedCell, day: Int, slice: Int = 0): World[I] = {
-        timeSlices match {
-          case Nil => world
-          case time :: t =>
-            def moved = moveType match {
-              case MoveType.Data => dynamic.moveInMoveMatrix(world, locatedCell, time, stableDestinations, location, home, socialCategory, rng)
-              case MoveType.Random => dynamic.randomMove(world, time, 1.0, location, stableDestinations, rng)
-              case MoveType.No => world
-            }
+          val convicted = exchange(moved, day, slice, rng)
+          visitor.foreach(_(convicted, bb, gridSize, Some((day, slice))))
+          simulateOneDay(convicted, bb, gridSize, t, locatedCell, day, slice + 1)
 
-            val convicted = exchange(moved, day, slice, rng)
-            visitor.foreach(_(convicted, bb, gridSize, Some((day, slice))))
-            simulateOneDay(convicted, bb, gridSize, t, locatedCell, day, slice + 1)
-        }
-      }
 
     // Ensures the world is not retained in memory
     var currentWorld = world()
     visitor.foreach(_(currentWorld, bbox, gridSize, None))
 
-    for {
+    for
       day <- 0 until days
-    } {
+    do
       currentWorld = simulateOneDay(currentWorld, bbox, gridSize, timeSlices.toList, locatedCell, day)
-    }
 
     currentWorld
-  }
+
 
   def simulate[I: ClassTag](
     days: Int,
@@ -95,20 +97,20 @@ object simulation {
     home: Lens[I, Location],
     socialCategory: I => AggregatedSocialCategory,
     rng: Random,
-    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] = {
+    visitor: Option[(World[I], BoundingBox, Int, Option[(Int, Int)]) => Unit] = None): World[I] =
 
     def worldFeature = WorldFeature.load(population)
     val bbox = worldFeature.originalBoundingBox
     val gridSize = worldFeature.gridSize
     val moveMatrix = MoveMatrix.load(moves)
 
-    try {
+    try
       def locatedCell: LocatedCell = (timeSlice: TimeSlice, i: Int, j: Int) => moveMatrix.get((i, j), timeSlice)
       def world = generateWorld(worldFeature.individualFeatures, buildIndividual, location, home, rng)
 
       def populationWithMoves =
-        moveType match {
-          case MoveType.Data =>
+        moveType match
+          case MoveType.Data | _: MoveType.PartialRandom =>
             val fixedDay = assignRandomDayLocation(world, locatedCell, stableDestinations, location.get, home.get, socialCategory, rng)
             assignFixNightLocation(
               fixedDay,
@@ -117,7 +119,6 @@ object simulation {
             )
           case MoveType.Random => assignFixNightLocation(world, stableDestinations, home.get)
           case MoveType.No => assignFixNightLocation(world, stableDestinations, home.get)
-        }
 
       simulateWorld(
         days = days,
@@ -134,8 +135,8 @@ object simulation {
         rng = rng,
         visitor = visitor
       )
-    } finally moveMatrix.close()
-  }
+    finally moveMatrix.close()
+
 
 
 //  def simulateWithVisitor[I: ClassTag](
@@ -203,4 +204,3 @@ object simulation {
 //    } finally moveMatrix.close
 //  }
   
-}
