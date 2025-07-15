@@ -185,7 +185,7 @@ object dynamic {
       db.close()
     }
 
-    def load(file: java.io.File) = {
+    def load(file: java.io.File) =
       import org.mapdb._
 
       val thread = Thread.currentThread()
@@ -203,7 +203,6 @@ object dynamic {
 
         db.hashMap("moves").createOrOpen.asInstanceOf[HTreeMap[(Location, TimeSlice), Cell]]
       } finally thread.setContextClassLoader(cl)
-    }
 
 //      val os = new FileOutputStream((file / timeSlicesFileName).toJava)
 //      try os.getChannel.write(Pickle.intoBytes(moves.map(_._1)))
@@ -302,7 +301,14 @@ object dynamic {
 
     Focus[World[I]](_.individuals).set(newIndividuals)(world)
 
-  def assignRandomDayLocation[I: ClassTag](world: World[I], locatedCell: LocatedCell, stableDestination: Lens[I, Map[TimeSlice, Location]], location: I => Location, home: I => Location, socialCategory: I => AggregatedSocialCategory, rng: Random) =
+  def assignFixedLocationFromMoveMatrix[I: ClassTag](
+    world: World[I],
+    moveMatrixCell: LocatedCell,
+    stableDestination: Lens[I, Map[TimeSlice, Location]],
+    timeSlice: TimeSlice,
+    location: I => Location,
+    home: I => Location,
+    socialCategory: I => AggregatedSocialCategory, rng: Random) =
     val newIndividuals = Array.ofDim[I](world.individuals.length)
     var index = 0
 
@@ -310,7 +316,7 @@ object dynamic {
       (line, i) <- Focus[Index[I]](_.cells).get(Index.indexIndividuals(world, location)).zipWithIndex
       (individuals, j) <- line.zipWithIndex
     do
-      val workTimeMovesFromCell = locatedCell(dayTimeSlice, i, j)
+      val workTimeMovesFromCell = moveMatrixCell(timeSlice, i, j)
 
       assert(workTimeMovesFromCell != null)
 
@@ -318,17 +324,17 @@ object dynamic {
         individual <- individuals
       do
         def newIndividual =
-          dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match {
-            case Some(d) => stableDestination.modify(_ + (dayTimeSlice -> d))(individual)
-            case None => stableDestination.modify(_ + (dayTimeSlice -> home(individual)))(individual)
-          }
+          dynamic.sampleDestinationInMoveMatrix(workTimeMovesFromCell, individual, socialCategory, rng) match
+            case Some(d) => stableDestination.modify(_ + (timeSlice -> d))(individual)
+            case None => stableDestination.modify(_ + (timeSlice -> home(individual)))(individual)
+
         newIndividuals(index) = newIndividual
         index += 1
 
     Focus[World[I]](_.individuals).set(newIndividuals)(world)
 
-  def assignFixNightLocation[I: ClassTag](world: World[I], stableDestination: Lens[I, Map[TimeSlice, Location]], home: I => Location) =
-    World.allIndividuals[I].modify { individual => stableDestination.modify(_ + (nightTimeSlice -> home(individual)))(individual) } (world)
+  def assignFixedLocation[I: ClassTag](world: World[I], stableDestination: Lens[I, Map[TimeSlice, Location]], timeSlice: TimeSlice, home: I => Location) =
+    World.allIndividuals[I].modify { individual => stableDestination.modify(_ + (timeSlice -> home(individual)))(individual) } (world)
 
   def randomiseLocation[I: ClassTag](world: World[I], location: I => Location, home: Lens[I, Location], random: Random) =
     val reach = reachable(Index[I](world.individuals.iterator, location, world.sideI, world.sideJ))
